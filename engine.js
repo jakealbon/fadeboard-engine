@@ -889,7 +889,7 @@ const runMode = (m, args = []) => {   // run another engine mode; its output goe
   try { cp.execFileSync(process.execPath, [process.argv[1], DIR, m, ...args, NOW.toISOString()], { stdio: ["ignore", fd, "pipe"], maxBuffer: 64e6 }); } finally { fs.closeSync(fd); }
   const out = JSON.parse(fs.readFileSync(f, "utf8")); fs.unlinkSync(f); return out;
 };
-const COLLECT_URL = "https://chippytips.com/fb/collector.js";
+const COLLECT_BASE = "https://raw.githubusercontent.com/jakealbon/fadeboard-engine/main/collectors/";   // public engine repo, one file per version (named by its hash), so no stale caches and no site deploy needed
 const sha = s => crypto.createHash("sha256").update(s).digest("hex");
 const h5 = s => { let h = 2166136261; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36).slice(0, 5); };
 const slugS = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -910,7 +910,7 @@ const college = lg => lg === "NCAAF" || lg === "NCAAB";
 
 /* ---- the collector bundle and the bootstrap that loads it (hash-checked, so only this exact code runs) ---- */
 const BUNDLE = COLLECTJS;
-const boot = (fn, plan) => `const s = await (await fetch("${COLLECT_URL}?h=${sha(BUNDLE).slice(0, 12)}", { cache: "no-store" })).text(); const d = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, "0")).join(""); d !== "${sha(BUNDLE)}" ? "collector mismatch" : ((0, eval)(s), await window.__fb.${fn}(${JSON.stringify(plan)}))`;
+const boot = (fn, plan) => `const s = await (await fetch("${COLLECT_BASE}${sha(BUNDLE).slice(0, 12)}.js", { cache: "no-store" })).text(); const d = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, "0")).join(""); d !== "${sha(BUNDLE)}" ? "collector mismatch" : ((0, eval)(s), await window.__fb.${fn}(${JSON.stringify(plan)}))`;
 
 /* ---- reading this session's own transcript (tool results land there), so big results never have to be retyped ---- */
 function transcriptTexts(){
