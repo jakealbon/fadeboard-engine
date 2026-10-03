@@ -962,9 +962,17 @@ function versions(){   // latest version the tools reported for each collection/
 const docPath = (coll, id) => path.join(DIR, coll, id + ".json");
 const readDoc = (coll, id) => { try { const j = JSON.parse(fs.readFileSync(docPath(coll, id), "utf8")); return j.data || j; } catch (e){ return null; } };
 const merge = (a, b) => { if (!a || typeof a !== "object" || Array.isArray(a) || !b || typeof b !== "object" || Array.isArray(b)) return b; const o = { ...a }; for (const [k, v] of Object.entries(b)) o[k] = merge(a[k], v); return o; };
-function writePlan(changes){   // changes: {"coll/id": patch} -> local merge + batch entries
+function writePlan(changes, sets = {}){   // changes: {"coll/id": patch} -> local merge + batch entries; sets: {"coll/id": whole doc} replaced outright
   fs.mkdirSync(W, { recursive: true });
   const ver = versions(), entries = [];
+  for (const [k, doc] of Object.entries(sets)){
+    const [coll, id] = k.split("/"), cur = readDoc(coll, id);
+    fs.mkdirSync(path.join(DIR, coll), { recursive: true }); fs.writeFileSync(docPath(coll, id), JSON.stringify(doc));
+    const f = path.join(W, `${coll}-${id}.json`); fs.writeFileSync(f, JSON.stringify(doc));
+    const e = { op: "set", collection: coll, doc_id: id, file_path: f };
+    if (cur){ if (ver[k] == null) e.if_version = "GET"; else e.if_version = ver[k]; }
+    entries.push(e);
+  }
   for (const [k, patch] of Object.entries(changes)){
     const [coll, id] = k.split("/"), cur = readDoc(coll, id), next = cur ? merge(cur, patch) : patch;
     fs.mkdirSync(path.join(DIR, coll), { recursive: true }); fs.writeFileSync(docPath(coll, id), JSON.stringify(next));
@@ -1284,64 +1292,110 @@ function apply(nonce){
   return { batches, manual, stats };
 }
 
-/* ---- posting and site uploads, in one browser call ---- */
+/* ---- posting and site uploads: only what changed since the last good upload, in small self-checking browser calls ----
+   Each part is plain JSON the run types into the tab as printed; the part checks its own fingerprint first, so a copying
+   slip is caught (copy:false) instead of posting garbage. Pinnacle and Aussie prices are left to the site's odds Worker. */
+const PART_MAX = 5000, PARTS_MAX = 6;
+const r05 = v => typeof v === "number" ? Math.round(v * 20) / 20 : v;
+const steamSig = x => JSON.stringify(x, (k, v) => k === "price" ? r05(v) : v);   // small price wobbles don't count as a change
+const h32 = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36); };
 function push(){
   const H = brisHour(), modes = ["plays"]; if (H === 13 || H === 14) modes.push("daily"); if ((H === 13 || H === 14) && brisDay() === "Tue") modes.push("weekly");
   const run = (m, extra = []) => runMode(m, extra);
   const summaries = readDoc("posts", "summaries")?.items || {};
   const msgs = [], marks = {}; let vl = {};
   for (const m of modes){ const o = run(m); for (const x of o.messages || []) if (m === "plays" || !summaries[x.key]) msgs.push({ ...x, mode: m }); if (m === "plays"){ Object.assign(marks, o.markers || {}); vl = o.vlog || {}; } }
-  const sync = readDoc("config", "pushsync") || {}, hashes = { fx: { ...(sync.fx || {}) } };
-  const strip = d => JSON.stringify(d, (k, v) => k === "px" || k === "pxT" || k === "updatedAt" ? undefined : v);
-  const tf = run("tipfix").docs || {}, fxCh = {};
-  for (const [id, d] of Object.entries(tf)){ const h = sha(strip(d)).slice(0, 16); if (sync.fx?.[id] !== h){ fxCh[id] = d; hashes.fx[id] = h; } }
-  const steam = run("steam"), sh = sha(JSON.stringify(steam.items || [])).slice(0, 16); const steamCh = sync.steam !== sh; hashes.steam = sh;
-  let board = null; if (sync.boardOn && !sync.noBoard){ board = run("board"); }   // the site copy of the board waits until Jake has run v10 (then set config/pushsync.boardOn)
+  const sync = readDoc("config", "pushsync") || {};
+  /* fixtures, game by game, without the Pinnacle/Aussie prices (the Worker fills those) */
+  const tf = run("tipfix").docs || {}, fxOld = sync.fxg || {}, fxNew = {}, fxOps = [], seed = { fx: {}, sh: {} };
+  for (const [id, d] of Object.entries(tf)) for (const [gid, g] of Object.entries(d.games || {})){
+    const slim = { ...g, px: g.px && g.px.dk ? { dk: g.px.dk } : {} }; delete slim.pxT; delete slim.pinT; delete slim.auT;
+    const near = Date.parse(g.kickoff || "2100-01-01") < NOW.getTime() + 24 * 3600e3;   // weather and injury notes only count inside a day
+    const hk = id + "|" + gid, h = h32(JSON.stringify(slim, (k, v) => k === "info" && !near ? undefined : typeof v === "number" ? r05(v) : v)); fxNew[hk] = h;
+    if (!sync.fxg && Date.parse(g.kickoff || "2100-01-01") < NOW.getTime() - 48 * 3600e3){ seed.fx[hk] = h; continue; }   // first run: older games are already on the site
+    if (Date.parse(g.kickoff || "2100-01-01") > NOW.getTime() + 4 * 864e5){ if (fxOld[hk]) fxNew[hk] = fxOld[hk]; continue; }   // further out waits until it's within 4 days
+    if (fxOld[hk] !== h) fxOps.push({ t: "fx", id, meta: { sport: d.sport, round: d.round, label: d.label, start: d.start }, gid, g: slim, hk, h, ko: g.kickoff || "9" });
+  }
+  /* Chippy's Best, item by item: live plays added, changed or gone, and newly graded results */
+  const steam = run("steam"), sOld = sync.sh || {}, sNew = {}, stOps = [];
+  for (const x of steam.items || []){ const k = x.kind === "graded" ? "g|" + x.k : "l|" + x.key, h = h32(steamSig(x)); sNew[k] = h; if (!sync.sh && x.kind === "graded" && (x.d || "") < etDate(new Date(NOW.getTime() - 48 * 3600e3).toISOString())){ seed.sh[k] = h; continue; } if (sOld[k] !== h) stOps.push({ t: "st", x, hk: k, h, ko: x.kind === "graded" ? "z" : x.kickoff || "9" }); }
+  for (const k of Object.keys(sOld)) if (k.startsWith("l|") && !sNew[k]) stOps.push({ t: "rm", key: k.slice(2), hk: k, h: null, ko: "0" });
+  /* order: posts first, then whatever kicks off soonest */
+  fxOps.sort((a, b) => a.ko.localeCompare(b.ko)); stOps.sort((a, b) => (a.t === "rm" ? -1 : 0) - (b.t === "rm" ? -1 : 0) || a.ko.localeCompare(b.ko));
+  const rest = [...stOps.filter(o => o.t !== "rm"), ...fxOps].sort((a, b) => a.ko.localeCompare(b.ko));   // plays and fixtures together, soonest first, results last
+  const ops = [...msgs.map((m, i) => ({ t: "msg", i, c: m.content })), ...stOps.filter(o => o.t === "rm"), ...rest];
+  const parts = []; let cur = [], len = 0, held = 0;
+  for (const o of ops){
+    const wire = o.t === "msg" ? { m: o.c } : o.t === "rm" ? { r: o.key } : o.t === "st" ? { s: o.x } : { f: o.id, d: o.meta, k: o.gid, g: o.g };
+    const n = JSON.stringify(wire).length;
+    if (cur.length && len + n > PART_MAX){ parts.push(cur); cur = []; len = 0; }
+    if (parts.length >= PARTS_MAX){ held++; continue; }   // the rest goes next hour (hashes stay old, so it's resent)
+    cur.push({ o, wire }); len += n;
+  }
+  if (cur.length && parts.length < PARTS_MAX) parts.push(cur);
+  const hook = process.env.FB_HOOK || "__FB_HOOK__", token = process.env.FB_TOKEN || "__FB_TOKEN__", nonce = NOW.getTime().toString(36);
   fs.mkdirSync(FB, { recursive: true });
-  fs.writeFileSync(path.join(FB, "push-state.json"), JSON.stringify({ msgs: msgs.map(m => ({ key: m.key, mode: m.mode })), marks, vlog: vl, hashes, fx: fxCh, board: board ? { sync: board.sync, n: (board.chunks || []).length } : null }));
-  const hook = process.env.FB_HOOK || "__FB_HOOK__", token = process.env.FB_TOKEN || "__FB_TOKEN__", key = "sb_publishable_mDquQa9SCMxEvO2AefqRgg_eqA4uvxf", nonce = NOW.getTime().toString(36);
-  const sb = (fn, body) => `fetch("https://nnlhyjxsgtyuygevhwta.supabase.co/rest/v1/rpc/${fn}", {method:"POST", headers:{"apikey":"${key}","Content-Type":"application/json"}, body: JSON.stringify(${body})}).then(async r => [r.status, (await r.text()).slice(0, 80)])`;
-  const gz = o => { const z = require("zlib").gzipSync(Buffer.from(JSON.stringify(o))); return z.toString("base64"); };
-  const lines = [`const out = {d:[], fx:null, steam:null, board:[]}; const wait = ms => new Promise(r => setTimeout(r, ms));`,
-    `const un = async b64 => JSON.parse(await new Response(new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))]).stream().pipeThrough(new DecompressionStream("gzip"))).text());`];
-  if (msgs.length){ lines.push(`const M = await un(${JSON.stringify(gz(msgs.map(m => m.content)))});`,
-    `for (const c of M){ let r = await fetch("${hook}?wait=true", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({username:"Chippy Tips", content: c})}); if (r.status === 429){ const j = await r.json().catch(() => ({})); await wait(((j.retry_after || 2) * 1000) + 200); r = await fetch("${hook}?wait=true", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({username:"Chippy Tips", content: c})}); } out.d.push(r.status); await wait(1500); }`); }
-  if (Object.keys(fxCh).length) lines.push(`out.fx = await ${sb("push_fixtures", `{p_token:"${token}", p_docs: await un(${JSON.stringify(gz(fxCh))})}`)};`);
-  if (steamCh) lines.push(`out.steam = await ${sb("push_feed", `{p_token:"${token}", p_name:"steam", p_items: await un(${JSON.stringify(gz(steam.items || []))})}`)};`);
-  if (board){ const ch = board.chunks && board.chunks.length ? board.chunks : [{ games: [], tips: [], posts: [] }];
-    lines.push(`const B = await un(${JSON.stringify(gz({ chunks: ch, meta: board.meta }))});`,
-      `for (let i = 0; i < B.chunks.length; i++){ const r = await ${sb("push_board", `{p_token:"${token}", p_items: B.chunks[i], p_meta: i ? null : B.meta}`)}; out.board.push(r[0]); if (r[0] === 404) break; }`); }
-  lines.push(`"FBC1|push|${nonce}|1/1|" + JSON.stringify(out)`);
-  return { js: lines.join("\n"), nonce, messages: msgs.length, fixtures: Object.keys(fxCh).length, steam: steamCh, boardChunks: board ? (board.chunks || []).length : 0 };
+  for (const f of fs.readdirSync(FB)) if (/^push-\d+\.js$/.test(f)) fs.unlinkSync(path.join(FB, f));
+  const files = parts.map((p, k) => {
+    const W = p.map(x => x.wire), tag = "p" + (k + 1), body = JSON.stringify(W);
+    const js = [`const W = ${body};`,
+      `const h32 = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36); };`,
+      `const tag = "FBC1|${tag}|${nonce}|1/1|";`,
+      `if (h32(JSON.stringify(W)) !== "${h32(body)}") tag + JSON.stringify({ copy: false });`,
+      `else { const out = { copy: true, r: [] }, wait = ms => new Promise(r => setTimeout(r, ms));`,
+      ` const sb = (fn, b) => fetch("https://nnlhyjxsgtyuygevhwta.supabase.co/rest/v1/rpc/" + fn, { method: "POST", headers: { apikey: "sb_publishable_mDquQa9SCMxEvO2AefqRgg_eqA4uvxf", "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.status).catch(() => 0);`,
+      ` const post = c => fetch("${hook}?wait=true", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: "Chippy Tips", content: c }) });`,
+      ` const fx = {}, up = [], rm = [];`,
+      ` for (const w of W){ if (w.m){ let r = await post(w.m).catch(() => null); if (r && r.status === 429){ const j = await r.json().catch(() => ({})); await wait(((j.retry_after || 2) * 1000) + 200); r = await post(w.m).catch(() => null); } out.r.push(r ? r.status : 0); await wait(1500); }`,
+      `   else if (w.f){ const d = fx[w.f] = fx[w.f] || { ...w.d, games: {} }; d.games[w.k] = w.g; } else if (w.s) up.push(w.s); else if (w.r) rm.push(w.r); }`,
+      ` out.fx = Object.keys(fx).length ? await sb("push_fixture_games", { p_token: "${token}", p_docs: fx }) : null;`,
+      ` out.st = up.length || rm.length ? await sb("push_feed_diff", { p_token: "${token}", p_name: "steam", p_up: up, p_rm: rm }) : null;`,
+      ` tag + JSON.stringify(out); }`].join("\n");
+    const file = path.join(FB, `push-${k + 1}.js`); fs.writeFileSync(file, js); return file;
+  });
+  fs.writeFileSync(path.join(FB, "push-state.json"), JSON.stringify({ nonce, msgs: msgs.map(m => ({ key: m.key, mode: m.mode })), marks, vlog: vl,
+    parts: parts.map(p => p.map(x => ({ t: x.o.t, i: x.o.i, hk: x.o.hk, h: x.o.h, id: x.o.id }))), fxKeep: Object.keys(tf), sNew, seed }));
+  return { nonce, parts: parts.length, files, messages: msgs.length, fixtureGames: fxOps.length, steamChanges: stOps.length, heldForNextHour: held, chars: parts.map(p => p.reduce((a, x) => a + JSON.stringify(x.wire).length, 0)) };
 }
 function pushdone(nonce){
-  const R = grab("push", nonce) || { d: [], fx: null, steam: null, board: [] };
-  let st = { msgs: [], marks: {}, vlog: {}, hashes: { fx: {} }, fx: {}, board: null }; try { st = JSON.parse(fs.readFileSync(path.join(FB, "push-state.json"), "utf8")); } catch (e){}
+  let st = { msgs: [], marks: {}, vlog: {}, parts: [] }; try { st = JSON.parse(fs.readFileSync(path.join(FB, "push-state.json"), "utf8")); } catch (e){}
   const now = NOW.toISOString(), ch = {};
   const put = (coll, id, patch) => { ch[coll + "/" + id] = merge(ch[coll + "/" + id] || {}, patch); };
+  const sync = readDoc("config", "pushsync") || {}, fxg = { ...(sync.fxg || {}) }, sh = { ...(sync.sh || {}) };
+  const msgOk = {}, res = [], fxDocs = new Set();
+  if (st.nonce === nonce && st.seed){ Object.assign(fxg, st.seed.fx || {}); Object.assign(sh, st.seed.sh || {}); }
+  if (nonce !== "none" && st.nonce === nonce) st.parts.forEach((p, k) => {
+    let R = null; try { R = grab("p" + (k + 1), nonce); } catch (e){}
+    res.push(R ? (R.copy ? { fx: R.fx, st: R.st, d: R.r } : "copy slip") : "missing");
+    if (!R || !R.copy) return;
+    let mi = 0;
+    for (const o of p){
+      if (o.t === "msg"){ const s = R.r[mi++]; if (s === 200 || s === 204) msgOk[o.i] = true; }
+      else if (o.t === "fx"){ if (R.fx === 200){ fxg[o.hk] = o.h; fxDocs.add(o.id); } }
+      else if (R.st === 200){ if (o.h) sh[o.hk] = o.h; else delete sh[o.hk]; }
+    }
+  });
   let posted = 0;
-  st.msgs.forEach((m, i) => { const ok = [200, 204].includes(R.d[i]); if (!ok) return; posted++;
+  st.msgs.forEach((m, i) => { if (!msgOk[i]) return; posted++;
     if (m.mode === "plays"){ for (const [d, items] of Object.entries(st.marks)) if (items[m.key]) put("posts", d, { date: d, items: { [m.key]: items[m.key] } }); }
     else put("posts", "summaries", { items: { [m.key]: { t: now } } }); });
   for (const [d, o] of Object.entries(st.vlog || {})) put("vlog", d, readDoc("vlog", d) ? { items: o.items } : o);
-  const sync = readDoc("config", "pushsync") || {}, ns = { ...sync, t: now };
-  if (R.fx && R.fx[0] === 200) ns.fx = st.hashes.fx; else if (R.fx) st.fx = {};   // upload failed: don't mark fixtures as sent
-  if (R.steam && R.steam[0] === 200) ns.steam = st.hashes.steam;
-  if (st.board && R.board.length && R.board[0] === 404) ns.noBoard = true;   // the site's board tables aren't there yet (v10): stop sending until Jake runs it
-  put("config", "pushsync", ns);
-  if (st.board && R.board.length && R.board.every(s => s === 200)) put("config", "boardsync", { h: st.board.sync.h, t: st.board.sync.t });
-  const rf = readDoc("config", "refresh") || {}; put("config", "refresh", { last: now, runs: [...(rf.runs || []), now].slice(-40), browser: !!(st.msgs && (R.d.length || R.fx || R.steam)) || fs.existsSync(path.join(FB, "apply.json")) });
-  const batches = writePlan(ch);
-  /* the tipping app's own copy of the fixtures (a separate artifact) */
-  const tipapp = []; const ver = versions();
-  for (const [id, d] of Object.entries(st.fx || {})){ const f = path.join(W, `fixtures-${id}.json`); fs.writeFileSync(f, JSON.stringify(d)); const e = { op: "set", collection: "fixtures", doc_id: id, file_path: f }; if (ver["fixtures/" + id]) e.if_version = ver["fixtures/" + id]; tipapp.push(e); }
-  return { batches, tipapp, stats: { posted, of: st.msgs.length, fixtures: R.fx, steam: R.steam, board: R.board, noBoard: !!ns.noBoard } };
+  /* forget fixture weeks and plays that are no longer produced, so the record stays small */
+  const keep = new Set(st.fxKeep || []); for (const k of Object.keys(fxg)) if (!keep.has(k.split("|")[0])) delete fxg[k];
+  if (st.sNew) for (const k of Object.keys(sh)) if (k.startsWith("g|") && !st.sNew[k]) delete sh[k];
+  const ns = { ...sync, t: now, fxg, sh }; delete ns.fx; delete ns.steam;
+  const rf = readDoc("config", "refresh") || {}; put("config", "refresh", { last: now, runs: [...(rf.runs || []), now].slice(-40), browser: true });
+  const batches = writePlan(ch, { "config/pushsync": ns });
+  /* the tipping app's own copy of the fixtures (a separate artifact): whole weeks that changed */
+  const tipapp = []; const ver = versions(), tf = fxDocs.size ? runMode("tipfix").docs || {} : {};
+  for (const id of fxDocs){ const d = tf[id]; if (!d) continue; const f = path.join(W, `fixtures-${id}.json`); fs.writeFileSync(f, JSON.stringify(d)); const e = { op: "set", collection: "fixtures", doc_id: id, file_path: f }; if (ver["fixtures/" + id]) e.if_version = ver["fixtures/" + id]; tipapp.push(e); }
+  return { batches, tipapp, stats: { posted, of: st.msgs.length, parts: res } };
 }
 return { plan, apply, push, pushdone, grab, versions };
 })();
 if (MODE === "plan"){ process.stdout.write(JSON.stringify(RUN.plan(), null, 1)); process.exit(0); }
 if (MODE === "apply"){ process.stdout.write(JSON.stringify(RUN.apply(process.argv[4]), null, 1)); process.exit(0); }
-if (MODE === "push"){ const o = RUN.push(); fs.writeFileSync("/tmp/fb/push.js", o.js); process.stdout.write(JSON.stringify({ ...o, js: "(written to /tmp/fb/push.js)" }, null, 1)); process.exit(0); }
+if (MODE === "push"){ process.stdout.write(JSON.stringify(RUN.push(), null, 1)); process.exit(0); }
 if (MODE === "pushdone"){ process.stdout.write(JSON.stringify(RUN.pushdone(process.argv[4]), null, 1)); process.exit(0); }
 if (MODE === "versions"){ process.stdout.write(JSON.stringify(RUN.versions(), null, 1)); process.exit(0); }
 
@@ -1472,9 +1526,7 @@ if (MODE === "plays"){
     const V = verdictFor(g);
     for (const axis of ["side", "total"]){
       const v = V[axis]; if (!v) continue;
-      const go = v.rating === "Strong" || v.rating === "Solid";   // every Solid and Strong posts, however far out
-      const steamGo = v.steam && (v.rating === "Strong" || v.rating === "Solid" || v.rating === "Lean");
-      if (!go && !steamGo) continue;
+      if (!(v.rating === "Strong" || v.rating === "Solid") || (v.stake || 1) < 1) continue;   // Discord gets plays of 1 nut or more only
       const key = `best|${g.id}|${axis}|${v.dir}`;
       const RANK = { Lean: 1, Solid: 2, Strong: 3 }, prev = posted[key];
       if (prev && (RANK[v.rating] || 0) <= (RANK[prev.rating] || 0)) continue;   // already posted at this level or higher
@@ -1484,8 +1536,9 @@ if (MODE === "plays"){
       mark(etDate(g.kickoff), key, { type: "best", gameId: g.id, league: g.league, market: v.mk, side: v.dir, line: v.line, price: v.price, stake: v.stake || 1, ml: null, selection: v.label, rating: v.rating, steam: !!v.steam });
     }
   }
-  /* Pinnacle move alerts, every game inside 36 hours */
-  for (const g of games){
+  /* Pinnacle move alerts: switched off as posts of their own (3 Oct 2026, Jake: only plays of 1 nut or more). The move still
+     feeds the board's verdicts and the steam flag on plays. */
+  if (false) for (const g of games){
     if (!upcoming(g) || !g.pin || !g.pin.c || !g.pin.t || NOW / 1000 - g.pin.t > 3 * 3600) continue;
     for (const axis of ["side", "total"]){
       const mkKeys = Object.keys(posted).filter(k => k.startsWith(`pin|${g.id}|${axis}|`)).sort((a, b) => (posted[a].t || "").localeCompare(posted[b].t || ""));
