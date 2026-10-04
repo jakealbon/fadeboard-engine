@@ -1349,13 +1349,21 @@ function push(){
     if (x.kind === "graded" && sync.sh){ if (sOld[k] !== undefined){ sNew[k] = sOld[k]; continue; } if ((x.kick || "") < GRADE_FREEZE) continue; }
     sNew[k] = h; if (!sync.sh && x.kind === "graded" && (x.d || "") < etDate(new Date(NOW.getTime() - 48 * 3600e3).toISOString())){ seed.sh[k] = h; continue; } if (sOld[k] !== h) stOps.push({ t: "st", x, hk: k, h, ko: x.kind === "graded" ? "z" : x.kickoff || "9" }); }
   for (const k of Object.keys(sOld)) if (k.startsWith("l|") && !sNew[k]) stOps.push({ t: "rm", key: k.slice(2), hk: k, h: null, ko: "0" });
+  /* game records for the Game Centre and the Betfair helper: splits, verdicts, tips and results, game by game, only when they change
+     (splits count as changed in steps of 10 points, or 5 inside 6 hours, so an hourly wobble doesn't resend every game) */
+  const intel = run("intel").items || {}, iOld = sync.ig || {}, iNew = {}, giOps = [];
+  for (const [gid, x] of Object.entries(intel)){
+    const ko = Date.parse(x.ko), step = ko - NOW.getTime() < 6 * 3600e3 ? 5 : 10;
+    const h = h32(JSON.stringify({ ...x, sp: Object.fromEntries(Object.entries(x.sp || {}).map(([b, a]) => [b, a.map(v => v == null ? v : Math.round(v / step))])) }, (k, v) => typeof v === "number" ? r05(v) : v));
+    iNew[gid] = h; if (iOld[gid] !== h) giOps.push({ t: "gi", gid, x, hk: gid, h, ko: x.fin ? "y" + x.ko : x.ko });
+  }
   /* order: posts first, then whatever kicks off soonest */
   fxOps.sort((a, b) => a.ko.localeCompare(b.ko)); stOps.sort((a, b) => (a.t === "rm" ? -1 : 0) - (b.t === "rm" ? -1 : 0) || a.ko.localeCompare(b.ko));
-  const rest = [...stOps.filter(o => o.t !== "rm"), ...fxOps].sort((a, b) => a.ko.localeCompare(b.ko));   // plays and fixtures together, soonest first, results last
+  const rest = [...stOps.filter(o => o.t !== "rm"), ...fxOps, ...giOps].sort((a, b) => a.ko.localeCompare(b.ko));   // plays, fixtures and game records together, soonest first, results last
   const ops = [...msgs.map((m, i) => ({ t: "msg", i, c: m.content })), ...stOps.filter(o => o.t === "rm"), ...rest];
   const parts = []; let cur = [], len = 0, held = 0;
   for (const o of ops){
-    const wire = o.t === "msg" ? { m: o.c } : o.t === "rm" ? { r: o.key } : o.t === "st" ? { s: o.x } : { f: o.id, d: o.meta, k: o.gid, g: o.g };
+    const wire = o.t === "msg" ? { m: o.c } : o.t === "rm" ? { r: o.key } : o.t === "st" ? { s: o.x } : o.t === "gi" ? { i: o.gid, x: o.x } : { f: o.id, d: o.meta, k: o.gid, g: o.g };
     const n = JSON.stringify(wire).length;
     if (cur.length && len + n > PART_MAX){ parts.push(cur); cur = []; len = 0; }
     if (parts.length >= PARTS_MAX){ held++; continue; }   // the rest goes next hour (hashes stay old, so it's resent)
@@ -1374,33 +1382,35 @@ function push(){
       `else { const out = { copy: true, r: [] }, wait = ms => new Promise(r => setTimeout(r, ms));`,
       ` const sb = (fn, b) => fetch("https://nnlhyjxsgtyuygevhwta.supabase.co/rest/v1/rpc/" + fn, { method: "POST", headers: { apikey: "sb_publishable_mDquQa9SCMxEvO2AefqRgg_eqA4uvxf", "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.status).catch(() => 0);`,
       ` const post = c => fetch("${hook}?wait=true", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: "Chippy Tips", content: c }) });`,
-      ` const fx = {}, up = [], rm = [];`,
+      ` const fx = {}, up = [], rm = [], gi = {};`,
       ` for (const w of W){ if (w.m){ let r = await post(w.m).catch(() => null); if (r && r.status === 429){ const j = await r.json().catch(() => ({})); await wait(((j.retry_after || 2) * 1000) + 200); r = await post(w.m).catch(() => null); } out.r.push(r ? r.status : 0); await wait(1500); }`,
-      `   else if (w.f){ const d = fx[w.f] = fx[w.f] || { ...w.d, games: {} }; d.games[w.k] = w.g; } else if (w.s) up.push(w.s); else if (w.r) rm.push(w.r); }`,
+      `   else if (w.f){ const d = fx[w.f] = fx[w.f] || { ...w.d, games: {} }; d.games[w.k] = w.g; } else if (w.i) gi[w.i] = w.x; else if (w.s) up.push(w.s); else if (w.r) rm.push(w.r); }`,
       ` out.fx = Object.keys(fx).length ? await sb("push_fixture_games", { p_token: "${token}", p_docs: fx }) : null;`,
       ` out.st = up.length || rm.length ? await sb("push_feed_diff", { p_token: "${token}", p_name: "steam", p_up: up, p_rm: rm }) : null;`,
+      ` out.gi = Object.keys(gi).length ? await sb("push_intel", { p_token: "${token}", p_items: gi }) : null;`,
       ` tag + JSON.stringify(out); }`].join("\n");
     const file = path.join(FB, `push-${k + 1}.js`); fs.writeFileSync(file, js); return file;
   });
   fs.writeFileSync(path.join(FB, "push-state.json"), JSON.stringify({ nonce, msgs: msgs.map(m => ({ key: m.key, mode: m.mode })), marks, vlog: vl,
-    parts: parts.map(p => p.map(x => ({ t: x.o.t, i: x.o.i, hk: x.o.hk, h: x.o.h, id: x.o.id }))), fxKeep: Object.keys(tf), sNew, seed }));
-  return { nonce, parts: parts.length, files, messages: msgs.length, fixtureGames: fxOps.length, steamChanges: stOps.length, heldForNextHour: held, chars: parts.map(p => p.reduce((a, x) => a + JSON.stringify(x.wire).length, 0)) };
+    parts: parts.map(p => p.map(x => ({ t: x.o.t, i: x.o.i, hk: x.o.hk, h: x.o.h, id: x.o.id }))), fxKeep: Object.keys(tf), sNew, iNew, seed }));
+  return { nonce, parts: parts.length, files, messages: msgs.length, fixtureGames: fxOps.length, steamChanges: stOps.length, gameRecords: giOps.length, heldForNextHour: held, chars: parts.map(p => p.reduce((a, x) => a + JSON.stringify(x.wire).length, 0)) };
 }
 function pushdone(nonce){
   let st = { msgs: [], marks: {}, vlog: {}, parts: [] }; try { st = JSON.parse(fs.readFileSync(path.join(FB, "push-state.json"), "utf8")); } catch (e){}
   const now = NOW.toISOString(), ch = {};
   const put = (coll, id, patch) => { ch[coll + "/" + id] = merge(ch[coll + "/" + id] || {}, patch); };
-  const sync = readDoc("config", "pushsync") || {}, fxg = { ...(sync.fxg || {}) }, sh = { ...(sync.sh || {}) };
+  const sync = readDoc("config", "pushsync") || {}, fxg = { ...(sync.fxg || {}) }, sh = { ...(sync.sh || {}) }, ig = { ...(sync.ig || {}) };
   const msgOk = {}, res = [], fxDocs = new Set();
   if (st.nonce === nonce && st.seed){ Object.assign(fxg, st.seed.fx || {}); Object.assign(sh, st.seed.sh || {}); }
   if (nonce !== "none" && st.nonce === nonce) st.parts.forEach((p, k) => {
     let R = null; try { R = grab("p" + (k + 1), nonce); } catch (e){}
-    res.push(R ? (R.copy ? { fx: R.fx, st: R.st, d: R.r } : "copy slip") : "missing");
+    res.push(R ? (R.copy ? { fx: R.fx, st: R.st, gi: R.gi, d: R.r } : "copy slip") : "missing");
     if (!R || !R.copy) return;
     let mi = 0;
     for (const o of p){
       if (o.t === "msg"){ const s = R.r[mi++]; if (s === 200 || s === 204) msgOk[o.i] = true; }
       else if (o.t === "fx"){ if (R.fx === 200){ fxg[o.hk] = o.h; fxDocs.add(o.id); } }
+      else if (o.t === "gi"){ if (R.gi === 200) ig[o.hk] = o.h; }
       else if (R.st === 200){ if (o.h) sh[o.hk] = o.h; else delete sh[o.hk]; }
     }
   });
@@ -1412,7 +1422,8 @@ function pushdone(nonce){
   /* forget fixture weeks and plays that are no longer produced, so the record stays small */
   const keep = new Set(st.fxKeep || []); for (const k of Object.keys(fxg)) if (!keep.has(k.split("|")[0])) delete fxg[k];
   if (st.sNew) for (const k of Object.keys(sh)) if (k.startsWith("g|") && !st.sNew[k]) delete sh[k];
-  const ns = { ...sync, t: now, fxg, sh }; delete ns.fx; delete ns.steam;
+  if (st.iNew) for (const k of Object.keys(ig)) if (!st.iNew[k]) delete ig[k];   // games that left the window
+  const ns = { ...sync, t: now, fxg, sh, ig }; delete ns.fx; delete ns.steam;
   const rf = readDoc("config", "refresh") || {}; put("config", "refresh", { last: now, runs: [...(rf.runs || []), now].slice(-40), browser: true });
   const batches = writePlan(ch, { "config/pushsync": ns });
   /* the tipping app's own copy of the fixtures (a separate artifact): whole weeks that changed */
@@ -1430,6 +1441,36 @@ if (MODE === "versions"){ process.stdout.write(JSON.stringify(RUN.versions(), nu
 
 const messages = [], markers = {}, vlog = {};
 const mark = (date, key, body) => { (markers[date] = markers[date] || {})[key] = { ...body, t: NOW.toISOString() }; };
+if (MODE === "intel"){   // one compact record per game for the website's Game Centre and the Betfair helper: splits, verdicts, every tip and its result
+  const r1 = v => v == null || v === "" ? null : Math.round(+v * 100) / 100;
+  const tdec = p => { const v = num(p); if (v === null) return null; const d = Math.abs(v) >= 100 ? dec(v) : v; return d ? r1(d) : null; };
+  const gradeTip = (t, g) => { if (t.result) return t.result; if (!g || !graded(g)) return null;
+    const a = +g.final.away, h = +g.final.home, line = num(t.line);
+    if (t.market === "ml"){ if (a === h) return "P"; return (t.side === "home") === (h > a) ? "W" : "L"; }
+    if (t.market === "spread"){ if (line === null) return null; const m = (t.side === "home" ? h - a : a - h) + line; return m > 0 ? "W" : m < 0 ? "L" : "P"; }
+    if (t.market === "total"){ if (line === null) return null; const tot = a + h; if (tot === line) return "P"; return (t.side === "over") === (tot > line) ? "W" : "L"; }
+    if (t.market === "teamtotal"){ if (line === null || !t.team) return null; const sc = t.team === "home" ? h : a; if (sc === line) return "P"; return (t.side === "over") === (sc > line) ? "W" : "L"; }
+    return null; };
+  const KIND = { tipster: "t", vsin: "v", system: "s" };
+  const byGame = {};
+  for (const t of [...tipList, ...vsinList]){ const g = tipGame(t); if (!g) continue; (byGame[g.id] = byGame[g.id] || []).push(t); }
+  const lo = NOW.getTime() - 36 * 3600e3, hi = NOW.getTime() + 48 * 3600e3, items = {};
+  for (const g of games){
+    const ko = g.kickoff ? Date.parse(g.kickoff) : null; if (!ko || ko < lo || ko > hi) continue;
+    const sp = {};
+    for (const [b, short] of [["dk", "dk"], ["circa", "ci"], ["sl", "sl"]]){ const x = g.splits?.[b]; if (!x) continue;
+      sp[short] = ["spreadAwayBets", "spreadAwayHandle", "overBets", "overHandle", "mlAwayBets", "mlAwayHandle"].map(k => num(x[k])); }
+    const V = verdictFor(g), v = {};
+    for (const axis of ["side", "total"]){ const x = V[axis]; if (x && x.rating) v[axis === "side" ? "s" : "t"] = [x.rating, x.dir || null, x.mk || null, x.label || null, r1(dec(num(x.price))) || null, x.stake || 0]; }
+    const tips = (byGame[g.id] || []).map(t => { const model = /^SportsLine model/i.test(t.tipster || "");
+      return [t.tipster || "", model ? "m" : KIND[t.kind] || "t", t.market || "", t.side || "", num(t.line), tdec(t.price), t.market === "prop" ? (t.selection || "") : "", gradeTip(t, g), t.kind === "tipster" && !model ? String(t.note || "").slice(0, 140) : "", t.record || ""]; })
+      .sort((a, b) => (a[1] === "t" ? 0 : 1) - (b[1] === "t" ? 0 : 1)).slice(0, 60);
+    items[g.id] = { lg: g.league, d: g.date || etDate(g.kickoff), ko: g.kickoff, a: g.away, h: g.home, an: fullName(g.league, g.away), hn: fullName(g.league, g.home),
+      sp, v, tips, ea: earlyInfo(g) ? 1 : 0, fin: graded(g) ? [+g.final.away, +g.final.home] : null };
+  }
+  process.stdout.write(JSON.stringify({ items, t: NOW.toISOString() }));
+  process.exit(0);
+}
 if (MODE === "steam"){   // Chippy's Best for the ChippyTips website: board verdicts (all) + tipster consensus (2+), {items:[...], t}
   const items = [];
   const quotes = (g, mk, dir, line) => {
