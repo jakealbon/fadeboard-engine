@@ -6,8 +6,15 @@ const implied = o => o === null ? null : (o < 0 ? -o / (-o + 100) : 100 / (o + 1
 const started = g => g.kickoff && new Date(g.kickoff).getTime() < Date.now();
 const graded = g => g.final && num(g.final.away) !== null && num(g.final.home) !== null;
 
+/* fail-safe for empty or broken markets. With any real number of bets, tickets are never 0-1% or 99-100% on one side,
+   so a market showing that gives no signal. If two or more of a book's markets on a game look like that, the book's
+   whole feed for the game is treated as broken. (Money at 0% or 100% alone is allowed: one big bet at Circa can do that.) */
+const junkPct = v => v !== null && (v <= 1 || v >= 99);
+const BETKEYS = ["spreadAwayBets", "overBets", "mlAwayBets"];
+const bookJunk = (g, b) => { const sp = g.splits?.[b]; return !!sp && BETKEYS.filter(k => junkPct(num(sp[k]))).length >= 2; };
 function splitsFor(g, book){
   const sp = g.splits || {};
+  if (book === "sharp" ? (bookJunk(g, "dk") || bookJunk(g, "circa")) : bookJunk(g, book)) return {};
   if (book === "sharp"){
     const d = sp.dk || {}, c = sp.circa || {};
     return { spreadAwayBets: d.spreadAwayBets, spreadAwayHandle: c.spreadAwayHandle, overBets: d.overBets, overHandle: c.overHandle, mlAwayBets: d.mlAwayBets, mlAwayHandle: c.mlAwayHandle };
@@ -16,7 +23,7 @@ function splitsFor(g, book){
 }
 const HKEY = { spread:"spreadAwayHandle", total:"overHandle", ml:"mlAwayHandle" };
 function circaShare(g, mk, side){
-  const v = num(g.splits?.circa?.[HKEY[mk]]); if (v === null) return null;
+  const v = num(g.splits?.circa?.[HKEY[mk]]); if (v === null || bookJunk(g, "circa")) return null;
   return (side === "away" || side === "over") ? v : 100 - v;
 }
 function signal(g, mk, book = S.book){
@@ -25,7 +32,7 @@ function signal(g, mk, book = S.book){
   return s;
 }
 function followSig(g, mk){
-  const v = num(g.splits?.circa?.[HKEY[mk]]); if (v === null) return null;
+  const v = num(g.splits?.circa?.[HKEY[mk]]); if (v === null || bookJunk(g, "circa")) return null;
   const first = mk === "total" ? "over" : "away", second = mk === "total" ? "under" : "home";
   const side = v >= 50 ? first : second, share = side === first ? v : 100 - v;
   if (share < S.circaMin) return null;
@@ -59,7 +66,7 @@ function withPriceMove(r, grp){
 function baseSignal(g, mk, book = S.book){
   const sp = splitsFor(g, book);
   if (mk === "spread"){
-    const b = num(sp.spreadAwayBets); if (b === null) return null;
+    const b = num(sp.spreadAwayBets); if (b === null || junkPct(b)) return null;
     const h = num(sp.spreadAwayHandle);
     const pub = b >= 50 ? "away" : "home";
     const pubBets = pub === "away" ? b : 100 - b;
@@ -74,7 +81,7 @@ function baseSignal(g, mk, book = S.book){
       fade, fadeLine, pubLabel: g[pub], fadeLabel: `${g[fade]} ${fmtLine(fadeLine)}${g.spreadPrice?.[fade] != null ? " @ " + fmtOdds(num(g.spreadPrice[fade])) : ""}`, moveTxt: move ? `${Math.abs(move)} pt${Math.abs(move) === 1 ? "" : "s"}` : "" }, g.spreadPrice);
   }
   if (mk === "total"){
-    const b = num(sp.overBets); if (b === null) return null;
+    const b = num(sp.overBets); if (b === null || junkPct(b)) return null;
     const h = num(sp.overHandle);
     const pub = b >= 50 ? "over" : "under";
     const pubBets = pub === "over" ? b : 100 - b;
@@ -86,7 +93,7 @@ function baseSignal(g, mk, book = S.book){
       move, rlm: move !== null && move > 0, steam: move !== null && move < 0,
       fade, fadeLine: cur, pubLabel: pub === "over" ? "Over" : "Under", fadeLabel: `${fade === "over" ? "Over" : "Under"} ${cur ?? "–"}${g.totalPrice?.[fade] != null ? " @ " + fmtOdds(num(g.totalPrice[fade])) : ""}`, moveTxt: move ? `${Math.abs(move)} pt${Math.abs(move) === 1 ? "" : "s"}` : "" }, g.totalPrice);
   }
-  const b = num(sp.mlAwayBets); if (b === null) return null;
+  const b = num(sp.mlAwayBets); if (b === null || junkPct(b)) return null;
   const h = num(sp.mlAwayHandle);
   const pub = b >= 50 ? "away" : "home";
   const pubBets = pub === "away" ? b : 100 - b;
@@ -1317,6 +1324,7 @@ const PART_MAX = 5000, PARTS_MAX = 12;
 const r05 = v => typeof v === "number" ? Math.round(v * 20) / 20 : v;
 const steamSig = x => JSON.stringify(x, (k, v) => k === "price" ? r05(v) : v);   // small price wobbles don't count as a change
 const h32 = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36); };
+const GRADE_FREEZE = "2026-10-04T00:00:00Z";
 function push(){
   const H = brisHour(), modes = ["plays"]; if (H === 13 || H === 14) modes.push("daily"); if ((H === 13 || H === 14) && brisDay() === "Tue") modes.push("weekly");
   const run = (m, extra = []) => runMode(m, extra);
@@ -1336,7 +1344,10 @@ function push(){
   }
   /* Chippy's Best, item by item: live plays added, changed or gone, and newly graded results */
   const steam = run("steam"), sOld = sync.sh || {}, sNew = {}, stOps = [];
-  for (const x of steam.items || []){ const k = x.kind === "graded" ? "g|" + x.k : "l|" + x.key, h = h32(steamSig(x)); sNew[k] = h; if (!sync.sh && x.kind === "graded" && (x.d || "") < etDate(new Date(NOW.getTime() - 48 * 3600e3).toISOString())){ seed.sh[k] = h; continue; } if (sOld[k] !== h) stOps.push({ t: "st", x, hk: k, h, ko: x.kind === "graded" ? "z" : x.kickoff || "9" }); }
+  for (const x of steam.items || []){ const k = x.kind === "graded" ? "g|" + x.k : "l|" + x.key, h = h32(steamSig(x));
+    /* results already on the site never change, and games from before the splits fail-safe (4 Oct) aren't added later, so a rule change can't rewrite past results */
+    if (x.kind === "graded" && sync.sh){ if (sOld[k] !== undefined){ sNew[k] = sOld[k]; continue; } if ((x.kick || "") < GRADE_FREEZE) continue; }
+    sNew[k] = h; if (!sync.sh && x.kind === "graded" && (x.d || "") < etDate(new Date(NOW.getTime() - 48 * 3600e3).toISOString())){ seed.sh[k] = h; continue; } if (sOld[k] !== h) stOps.push({ t: "st", x, hk: k, h, ko: x.kind === "graded" ? "z" : x.kickoff || "9" }); }
   for (const k of Object.keys(sOld)) if (k.startsWith("l|") && !sNew[k]) stOps.push({ t: "rm", key: k.slice(2), hk: k, h: null, ko: "0" });
   /* order: posts first, then whatever kicks off soonest */
   fxOps.sort((a, b) => a.ko.localeCompare(b.ko)); stOps.sort((a, b) => (a.t === "rm" ? -1 : 0) - (b.t === "rm" ? -1 : 0) || a.ko.localeCompare(b.ko));
