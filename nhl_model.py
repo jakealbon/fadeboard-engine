@@ -54,7 +54,49 @@ def refresh(H):
     H["games"] = sorted(games.values(), key=lambda g: g["date"]); H["asof"] = datetime.datetime.utcnow().isoformat() + "Z"
     return probs
 
-def build(H, probs):
+REP = {"D": 0.7, "C": 1.3, "L": 1.3, "R": 1.3}
+class Lineups:
+    """Each team's regulars (10+ of its last 15 games), their usual ice time and points per 60 -> goals a game above a replacement."""
+    def __init__(self, SK):
+        self.SK = SK; self.games = collections.defaultdict(list); self.played = collections.defaultdict(lambda: collections.defaultdict(list)); self.st = {}; self.w = 0.5 ** (1 / 40)
+    def value(self, pid):
+        x = self.st.get(pid)
+        if not x or x[1] <= 0: return 0.0
+        p60 = (x[0] + 0.5 * REP.get(x[3], 1.1)) / (x[1] / 3600 + 0.5)
+        return max(0.0, p60 - REP.get(x[3], 1.1)) * (x[1] / max(x[2], 1e-9)) / 3600 / 2.6
+    def regulars(self, team):
+        last = self.games[team][-15:]
+        if len(last) < 8: return []
+        ls = set(last)
+        return [pid for pid, ds in self.played[team].items() if len(ds) >= 10 and ds[-1] >= last[0] and sum(1 for d in ds[-15:] if d in ls) >= 10]
+    def missing(self, team, date, out_names=None, names=None):
+        if out_names is not None:      # an upcoming game: regulars on the injury list
+            return sum(self.value(p) * w for p in self.regulars(team) for nm, w in [(asc(names.get(str(p), "")), out_names.get(asc(names.get(str(p), "")), 0))] if w)
+        lineup = self.SK.get(f"{date}|{team}")
+        if not lineup: return 0.0
+        here = {r[0] for r in lineup}
+        return sum(self.value(p) for p in self.regulars(team) if p not in here)
+    def update(self, team, date):
+        lineup = self.SK.get(f"{date}|{team}")
+        if not lineup: return
+        self.games[team].append(date)
+        for pid, toi, pts, sh, pos in lineup:
+            self.played[team][pid].append(date)
+            x = self.st.setdefault(pid, [0.0, 0.0, 0.0, pos]); x[0] = x[0] * self.w + pts; x[1] = x[1] * self.w + toi; x[2] = x[2] * self.w + 1; x[3] = pos
+
+def injuries():
+    """ESPN's NHL injury list: {team display name: {player name: weight}} (out = 1, day-to-day = 0.5)."""
+    j = get("https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/injuries") or {}
+    out = {}
+    for t in j.get("injuries", []):
+        d = out.setdefault(asc(t.get("displayName")), {})
+        for x in t.get("injuries", []):
+            st = (x.get("status") or "").lower(); nm = asc((x.get("athlete") or {}).get("displayName"))
+            w = 0.5 if "day" in st else 1.0 if any(k in st for k in ("out", "injured", "suspen")) else 0.0
+            if nm and w: d[nm] = max(w, d.get(nm, 0))
+    return out
+
+def build(H, probs, SK=None, INJ=None):
     ST = H["starters"]; TEAMS = {k.split("|")[1] for k in ST}
     SH = {}
     for k, v in H["shots"].items():
@@ -68,6 +110,7 @@ def build(H, probs):
     elo = collections.defaultdict(lambda: 1500.0); last = {}; season = None
     gsv = collections.defaultdict(lambda: [0.0, 0.0]); lg = [0.0, 0.0]; w = 0.5 ** (1 / P["GHL"])
     shs = collections.defaultdict(lambda: [0.0, 0.0]); ws = 0.5 ** (1 / P["SHL"]); rows = []
+    SK = SK or {}; LU = Lineups(SK); NAMES = SK.get("_names", {}); INJ = INJ or {}
     for g in H["games"]:
         if NHLC.get(g["away"], g["away"]) not in TEAMS or NHLC.get(g["home"], g["home"]) not in TEAMS: continue
         s = g["season"]
@@ -91,8 +134,12 @@ def build(H, probs):
             return (rate - lgsv) * 30, x, gid
         gh, xh, idh = gq(g["home"], "home"); ga, xa, ida = gq(g["away"], "away")
         ssh = lambda t: (shs[t][0] + 0.5 * 5) / (shs[t][1] + 5)
-        rows.append(dict(g=g, f=[1.0, diff / 100, gh - ga, (ssh(h) - ssh(a)) * 10], season=s, gh=idh, ga=ida))
+        ch, ca = NHLC.get(g["home"], g["home"]), NHLC.get(g["away"], g["away"])
+        if g["hg"] is None: mh, ma = LU.missing(ch, None, INJ.get(asc(g.get("hn")), {}), NAMES), LU.missing(ca, None, INJ.get(asc(g.get("an")), {}), NAMES)
+        else: mh, ma = LU.missing(ch, str(d0)), LU.missing(ca, str(d0))
+        rows.append(dict(g=g, f=[1.0, diff / 100, gh - ga, (ssh(h) - ssh(a)) * 10, mh - ma], season=s, gh=idh, ga=ida, miss=[round(ma, 2), round(mh, 2)]))
         if g["hg"] is None: continue
+        LU.update(ch, str(d0)); LU.update(ca, str(d0))
         mov = g["hg"] - g["ag"]; res = 1 if mov > 0 else 0; p = 1 / (1 + 10 ** (-diff / 400))
         mult = math.log(abs(mov) + 1) if not (g.get("ot") or g.get("so")) else 0.6
         sh_ = P["K"] * mult * (res - p); elo[h] += sh_; elo[a] -= sh_; last[h] = last[a] = d0
@@ -118,15 +165,16 @@ def main():
     H = json.load(open("nhl_hist.json")); H.setdefault("shots", {})
     probs = refresh(H)
     json.dump(H, open("nhl_hist.json", "w"))
-    rows, elo = build(H, probs); b = fit(rows)
+    SK = json.load(open("nhl_skaters.json")) if __import__("os").path.exists("nhl_skaters.json") else {}
+    rows, elo = build(H, probs, SK, injuries()); b = fit(rows)
     now = datetime.datetime.utcnow(); soon = (now + datetime.timedelta(days=3)).isoformat()
     out = []
     for r in rows:
         g = r["g"]
         if g["hg"] is not None or g["date"] > soon or g["date"] < (now - datetime.timedelta(hours=12)).isoformat(): continue
         p = 1 / (1 + math.exp(-float(np.dot(b, r["f"]))))
-        out.append(dict(espn=g["id"], date=g["date"], away=g["away"], home=g["home"], p_home=round(p, 4), goalies=[r["ga"], r["gh"]]))
-    json.dump(dict(asof=now.isoformat(timespec="seconds") + "Z", version="nhl-1", coef=[round(float(x), 3) for x in b], games=out,
+        out.append(dict(espn=g["id"], date=g["date"], away=g["away"], home=g["home"], p_home=round(p, 4), goalies=[r["ga"], r["gh"]], missing=r["miss"]))
+    json.dump(dict(asof=now.isoformat(timespec="seconds") + "Z", version="nhl-2", coef=[round(float(x), 3) for x in b], games=out,
                    ratings={t: round(v, 1) for t, v in sorted(elo.items(), key=lambda x: -x[1])}), open("nhl.json", "w"), indent=1)
     print(len(out), "NHL games priced", b)
 

@@ -10,6 +10,8 @@ def get(url, tries=5):
             if i == tries - 1: print("fail", url, e, file=sys.stderr); return None
             time.sleep(2 * (i + 1))
 
+NAMES = {}
+
 def season_rows(sid):
     """A month at a time: the NHL stats API stops at 10,000 rows per query."""
     y = int(sid[:4]); months = [(y, m) for m in range(9, 13)] + [(y + 1, m) for m in range(1, 8)]
@@ -26,6 +28,7 @@ def season_rows(sid):
         for rows in ex.map(month, months):
             for x in rows:
                 n += 1; k = f"{x['gameDate'][:10]}|{x['teamAbbrev']}"
+                NAMES[str(x["playerId"])] = x.get("skaterFullName") or ""
                 if any(r[0] == x["playerId"] for r in out.get(k, [])): continue
                 out.setdefault(k, []).append([x["playerId"], round((x.get("timeOnIcePerGame") or 0)), x.get("points") or 0, x.get("shots") or 0, x.get("positionCode") or ""])
     print(sid, n, len(out)); return out
@@ -41,6 +44,7 @@ def main():
         data.update(season_rows(f"{y}{y+1}"))
         if y < cur: done.add(y)
     data["_done"] = sorted(done); data["_v"] = 2
+    data["_names"] = {**data.get("_names", {}), **NAMES}
     json.dump(data, open(path, "w"), separators=(",", ":"))
 
 if __name__ == "__main__":
