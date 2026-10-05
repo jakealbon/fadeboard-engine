@@ -209,7 +209,7 @@ function verdict(g, groups){
     else if (mk === "total"){ line = num(g.total?.cur); price = num(g.totalPrice?.[dir]) ?? -110; label = `${dir === "over" ? "Over" : "Under"} ${line ?? "–"}`; }
     else { price = num(g.ml?.[dir]); label = `${g[dir]} ML`; }
     out[axis] = { axis, dir, mk, line, price, label, score: +adj.toFixed(2), raw: +top.score.toFixed(2), against: +against.toFixed(2), againstWhy,
-      rating, why: [...new Set(top.why)], split, steam: st, early, hrs, stake: rating === "Strong" ? 1.5 : rating === "Solid" ? 1 : rating === "Lean" ? 0.5 : 0 };
+      rating, why: [...new Set(top.why)], split, steam: st, early, hrs, stake: rating === "Strong" ? 1.5 : rating === "Solid" ? 0.5 : rating === "Lean" ? 0.5 : 0 };   // Solid cut to 0.5 nut (5 Oct 2026, Jake)
   }
   return out;
 }
@@ -466,8 +466,8 @@ function oppInfo(t){
   const o = _tgIdx.get(oppKeyOf(t.key) || "");
   return o ? { n: o.n, names: o.names, key: o.key } : { n: 0, names: [], key: oppKeyOf(t.key) };
 }
-/* consensus stake: 1u plus 0.5u per extra tipster. Both sides can go out; a disagreement is flagged in the message, not blocked. */
-const consStake = t => 1 + 0.5 * (t.n - 1);
+/* consensus stake: 1u plus 0.5u per extra tipster, capped at 1.5u. Both sides can go out; a disagreement is flagged in the message, not blocked. */
+const consStake = t => Math.min(1.5, 1 + 0.5 * (t.n - 1));   // capped at 1.5 nuts however many agree (5 Oct 2026, Jake)
 const consOk = t => t.n >= 2;
 
 /* verdict inputs: every tip group (incl. systems and SportsLine model) on this game */
@@ -1447,7 +1447,15 @@ if (MODE === "pushdone"){ process.stdout.write(JSON.stringify(RUN.pushdone(proce
 if (MODE === "versions"){ process.stdout.write(JSON.stringify(RUN.versions(), null, 1)); process.exit(0); }
 
 const messages = [], markers = {}, vlog = {};
-const mark = (date, key, body) => { (markers[date] = markers[date] || {})[key] = { ...body, t: NOW.toISOString() }; };
+const mark = (date, key, body) => { (markers[date] = markers[date] || {})[key] = { ...body, t: NOW.toISOString() }; posted[key] = { ...body, t: NOW.toISOString(), date }; };
+/* one side per game and market (5 Oct 2026, Jake): once a play is out on one side (spread and moneyline count as the same side
+   market), the other side is never posted, listed on the website or offered to the Betfair helper. A flip is flagged instead. */
+const AXIS = mk => mk === "total" ? "total" : mk === "spread" || mk === "ml" ? "side" : null;
+const PLAYTYPES = ["best", "tips", "circa", "fade"];
+const takenSide = (gid, mk) => { const ax = AXIS(mk); if (!gid || !ax) return null; let first = null;
+  for (const m of Object.values(posted)) if (m.gameId === gid && PLAYTYPES.includes(m.type) && AXIS(m.market) === ax && m.side && (!first || (m.t || "") < (first.t || ""))) first = m;
+  return first; };
+const oppTaken = (gid, mk, side) => { const m = takenSide(gid, mk); return m && m.side !== side ? m : null; };
 if (MODE === "intel"){   // one compact record per game for the website's Game Centre and the Betfair helper: splits, verdicts, every tip and its result
   const r1 = v => v == null || v === "" ? null : Math.round(+v * 100) / 100;
   const tdec = p => { const v = num(p); if (v === null) return null; const d = Math.abs(v) >= 100 ? dec(v) : v; return d ? r1(d) : null; };
@@ -1516,6 +1524,16 @@ if (MODE === "steam"){   // Chippy's Best for the ChippyTips website: board verd
       notes: t.tips.slice(0, 4).map(tp => ({ who: tp.tipster, rec: tp.record || "", note: String(tp.note || "").slice(0, 160) })),
       ...quotes(g, f.market, f.side, line) });
   }
+  /* one side per game and market: drop the side that contradicts a play already posted; if neither side has been posted yet,
+     keep the bigger stake (the board's verdict on a tie) */
+  { const keep = [];
+    for (const x of items){ if (x.gameId && oppTaken(x.gameId, x.market, x.side)) continue; keep.push(x); }
+    const grp = {}; for (const x of keep){ const ax = AXIS(x.market); if (x.gameId && ax) (grp[x.gameId + "|" + ax] = grp[x.gameId + "|" + ax] || []).push(x); }
+    const drop = new Set();
+    for (const xs of Object.values(grp)){ if (new Set(xs.map(x => x.side)).size < 2) continue;
+      const top = [...xs].sort((a, b) => (b.stake || 0) - (a.stake || 0) || (a.kind === "verdict" ? -1 : 1))[0];
+      for (const x of xs) if (x.side !== top.side) drop.add(x); }
+    items.length = 0; for (const x of keep) if (!drop.has(x)) items.push(x); }
   items.sort((a, b) => a.kickoff.localeCompare(b.kickoff));
   /* graded results, worked out exactly as the Fade Board's Strategy tab does (board verdicts on every graded game, and 2+ tipster
      groups at the group stake), so the website and the board agree. v:2 marks this method; the website ignores older rows. */
@@ -1547,7 +1565,7 @@ if (MODE === "steam"){   // Chippy's Best for the ChippyTips website: board verd
       const wt = worstTip(ts, f.side); let line = wt ? num(wt.line) : null; const selW = wt ? wt.selection : f.selection;
       if (line === null && g){ if (f.market === "spread"){ const c = num(g.spread?.cur); if (c !== null) line = f.side === "home" ? c : -c; } else if (f.market === "total"){ const c = num(g.total?.cur); if (c !== null) line = c; } }
       const r = ts.find(x => x.result)?.result || tipRes({ ...f, line }, g); if (!["W", "L", "P"].includes(r)) continue;
-      const decs = ts.map(x => dec(num(x.price))).filter(Boolean), d = decs.length ? decs.reduce((a, b) => a + b, 0) / decs.length : 1.91, st = 1 + 0.5 * (n - 1);
+      const decs = ts.map(x => dec(num(x.price))).filter(Boolean), d = decs.length ? decs.reduce((a, b) => a + b, 0) / decs.length : 1.91, st = Math.min(1.5, 1 + 0.5 * (n - 1));
       const kick = g?.kickoff || f.kickoff || null;
       items.push({ kind: "graded", v: 2, k: "c|" + key, s: "cons", d: kick ? etDate(kick) : f.date, kick, r, u: +(r === "W" ? (d - 1) * st : r === "L" ? -st : 0).toFixed(3), st,
         sel: selW || "", pr: +d.toFixed(3), lg: f.league || g?.league || "", game: g ? gName(g) : (f.game || ""), sc: g ? gScore(g) : "", who: [...new Set(ts.map(t => t.tipster))].slice(0, 6).join(", ") });
@@ -1619,13 +1637,18 @@ if (MODE === "board"){   // the board's own records, slimmed, for the website co
   process.exit(0);
 }
 if (MODE === "plays"){
+  const flipFlag = (g, axis, opp, now) => { const key = `flip|${g.id}|${axis}`; if (posted[key]) return;
+    messages.push({ key, content: `⚖️ **SIGNAL FLIPPED** · ${LG_EMOJI[g.league] || ""} ${g.league}\nThe other side now shows up (${now}), but we're already on **${opp.selection || ""}**. One side per game, so no new play: stick with the original or pass.\n${g.away} @ ${g.home} · ${bris(g.kickoff)}` });
+    mark(etDate(g.kickoff), key, { type: "flip", gameId: g.id }); };
   for (const g of games){
     if (!upcoming(g)) continue;
     const V = verdictFor(g);
     for (const axis of ["side", "total"]){
       const v = V[axis]; if (!v) continue;
-      if (!(v.rating === "Strong" || v.rating === "Solid") || (v.stake || 1) < 1) continue;   // Discord gets plays of 1 nut or more only
+      if (!(v.rating === "Strong" || v.rating === "Solid") || (v.stake || 0) < 0.5) continue;   // Discord gets Strong and Solid plays (Solid is 0.5 nut from 5 Oct 2026)
       const key = `best|${g.id}|${axis}|${v.dir}`;
+      const opp = oppTaken(g.id, v.mk, v.dir);
+      if (opp){ flipFlag(g, axis, opp, `${RATING_TXT[v.rating] || v.rating} ${v.label}`); continue; }
       const RANK = { Lean: 1, Solid: 2, Strong: 3 }, prev = posted[key];
       if (prev && (RANK[v.rating] || 0) <= (RANK[prev.rating] || 0)) continue;   // already posted at this level or higher
       const prevOpp = Object.keys(posted).find(k => k.startsWith(`best|${g.id}|${axis}|`) && k !== key);
@@ -1668,6 +1691,7 @@ if (MODE === "plays"){
     if (!consOk(t, posted)) continue;
     const key = `tips|${t.key}`, prev = posted[key];
     if (prev && prev.n >= t.n) continue;
+    if (t.g && !prev){ const opp = oppTaken(t.g.id, t.f.market, t.f.side); if (opp){ flipFlag(t.g, AXIS(t.f.market), opp, `${t.n} tipsters on ${t.f.selection}`); continue; } }
     if (t.g && ["spread", "total", "ml"].includes(t.f.market)){
       const V = verdictFor(t.g)[t.f.market === "total" ? "total" : "side"];
       if (V && V.dir !== t.f.side && (V.rating === "Strong" || V.rating === "Solid" || V.rating === "Split")) continue;
