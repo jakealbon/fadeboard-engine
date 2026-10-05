@@ -24,7 +24,7 @@ def main():
             if (e.get("season") or {}).get("type") not in (2, 3): continue
             c = e["competitions"][0]; st = c["status"]["type"]
             side = {x["homeAway"]: x for x in c["competitors"]}
-            out.append(dict(id=e["id"], date=e["date"], season=(e.get("season") or {}).get("year"), stype=e["season"]["type"], away=side["away"]["team"]["abbreviation"], home=side["home"]["team"]["abbreviation"],
+            out.append(dict(an=side["away"]["team"].get("displayName"), hn=side["home"]["team"].get("displayName"), id=e["id"], date=e["date"], season=(e.get("season") or {}).get("year"), stype=e["season"]["type"], away=side["away"]["team"]["abbreviation"], home=side["home"]["team"]["abbreviation"],
                             ag=int(side["away"].get("score") or 0) if st.get("completed") else None, hg=int(side["home"].get("score") or 0) if st.get("completed") else None,
                             ot=("OT" in (st.get("shortDetail") or "")), so=("SO" in (st.get("shortDetail") or ""))))
         return out
@@ -42,6 +42,17 @@ def main():
             for x in j.get("data", []):
                 if x.get("gamesStarted"): starters[(x["gameDate"][:10], x["teamAbbrev"])] = dict(id=x["playerId"], name=x.get("goalieFullName"), sa=x.get("shotsAgainst"), ga=x.get("goalsAgainst"))
         print("goalies", sid, total)
+    # team shots per game (shots are a steadier guide to team quality than goals)
+    shots = {}
+    for y in range(2015, end.year + (1 if end.month >= 8 else 0)):
+        sid = f"{y}{y+1}"; startrow = 0; total = 1
+        while startrow < total:
+            j = get(f"https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=true&start={startrow}&limit=100&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2") or {}
+            total = j.get("total", 0); startrow += 100
+            for x in j.get("data", []):
+                if x.get("gameDate") and x.get("teamFullName"):
+                    shots[f"{x['gameDate'][:10]}|{x['teamFullName']}"] = dict(sf=x.get("shotsForPerGame"), sa=x.get("shotsAgainstPerGame"), pp=x.get("powerPlayPct"), pk=x.get("penaltyKillPct"))
+        print("team shots", sid, total)
     # ESPN closing odds (kept for recent seasons)
     def odds(g):
         j = get(f"https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/events/{g['id']}/competitions/{g['id']}/odds", tries=2) or {}
@@ -56,7 +67,7 @@ def main():
             if o: games[gid]["odds"] = o
     print("with odds", sum(1 for g in games.values() if g.get("odds")))
     json.dump(dict(asof=datetime.datetime.utcnow().isoformat() + "Z", games=sorted(games.values(), key=lambda g: g["date"]),
-                   starters={f"{d}|{t}": v for (d, t), v in starters.items()}), open("nhl_hist.json", "w"))
+                   starters={f"{d}|{t}": v for (d, t), v in starters.items()}, shots=shots), open("nhl_hist.json", "w"))
 
 if __name__ == "__main__":
     main()
