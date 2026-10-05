@@ -1,0 +1,24 @@
+name: Chippy NHL history
+# One-off (re-runnable) build of the NHL history the Chippy model is fitted on. Saves nhl_hist.json to the model-data branch.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: model-data
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python nhl_history.py
+      - run: |
+          git config user.name "chippy-model"
+          git config user.email "chippy-model@users.noreply.github.com"
+          git add nhl_hist.json
+          git diff --cached --quiet || git commit -m "NHL history $(date -u +%F)"
+          git push
