@@ -19,10 +19,11 @@ jobs:
           python-version: "3.11"
       - run: pip install numpy
       - run: python nfl_model.py
+      - run: python nhl_skaters.py
       - run: python nhl_model.py
       - run: |
           git config user.name "chippy-model"
           git config user.email "chippy-model@users.noreply.github.com"
-          git add nfl.json nhl.json nhl_hist.json
+          git add nfl.json nhl.json nhl_hist.json nhl_skaters.json
           git diff --cached --quiet || git commit -m "Chippy model prices $(date -u +%FT%H:%MZ)"
           git pull --rebase origin model-data && git push
