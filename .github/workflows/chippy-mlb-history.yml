@@ -1,0 +1,24 @@
+name: Chippy MLB history
+# MLB stadiums, game weather, runs and home runs for the Chippy model. Saves mlb_hist.json to the model-data branch.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: model-data
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python mlb_history.py
+      - run: |
+          git config user.name "chippy-model"
+          git config user.email "chippy-model@users.noreply.github.com"
+          git add mlb_hist.json
+          git diff --cached --quiet || git commit -m "NBA history $(date -u +%F)"
+          git pull --rebase origin model-data && git push
