@@ -4,6 +4,8 @@ Keeps nhl_hist.json up to date (new results, goalies, shots), writes nhl.json fo
 import json, math, collections, datetime, unicodedata, urllib.request, concurrent.futures as cf, time, sys
 import numpy as np
 
+SORT = "&sort=%5B%7B%22property%22:%22gameId%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D"
+TSORT = "&sort=%5B%7B%22property%22:%22gameId%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22teamId%22,%22direction%22:%22ASC%22%7D%5D"
 P = dict(K=4, HFA=15, REG=0.4, B2B=35, PRIOR=4, GHL=25.0, SHL=20.0)
 NHLC = {"LA": "LAK", "NJ": "NJD", "SJ": "SJS", "TB": "TBL", "UTAH": "UTA"}
 ALIAS = {"ARI": "UTAH", "UTA": "UTAH", "PHX": "UTAH"}
@@ -44,7 +46,7 @@ def refresh(H):
     for kind in ("goalie", "team"):
         startrow, total = 0, 1
         while startrow < total:
-            j = get(f"https://api.nhle.com/stats/rest/en/{kind}/summary?isAggregate=false&isGame=true&start={startrow}&limit=100&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2") or {}
+            j = get(f"https://api.nhle.com/stats/rest/en/{kind}/summary?isAggregate=false&isGame=true&start={startrow}&limit=100{SORT if kind == 'goalie' else TSORT}&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2") or {}
             total = j.get("total", 0); startrow += 100
             for x in j.get("data", []):
                 if kind == "goalie" and x.get("gamesStarted"): H["starters"][f"{x['gameDate'][:10]}|{x['teamAbbrev']}"] = dict(id=x["playerId"], name=x.get("goalieFullName"), sa=x.get("shotsAgainst"), ga=x.get("goalsAgainst"))

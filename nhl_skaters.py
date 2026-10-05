@@ -18,7 +18,7 @@ def season_rows(sid):
         rng = f"%20and%20gameDate%3E=%22{yy}-{mm:02d}-01%22%20and%20gameDate%3C=%22{yy}-{mm:02d}-{last}%2023:59:59%22"
         rows, start, total = [], 0, 1
         while start < total:
-            j = get(f"https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&start={start}&limit=100&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2{rng}") or {}
+            j = get(f"https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&start={start}&limit=100&sort=%5B%7B%22property%22:%22gameId%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2{rng}") or {}
             total = j.get("total", 0); start += 100; rows += j.get("data", [])
         return rows
     out = {}; n = 0
@@ -26,20 +26,21 @@ def season_rows(sid):
         for rows in ex.map(month, months):
             for x in rows:
                 n += 1; k = f"{x['gameDate'][:10]}|{x['teamAbbrev']}"
+                if any(r[0] == x["playerId"] for r in out.get(k, [])): continue
                 out.setdefault(k, []).append([x["playerId"], round((x.get("timeOnIcePerGame") or 0)), x.get("points") or 0, x.get("shots") or 0, x.get("positionCode") or ""])
     print(sid, n, len(out)); return out
 
 def main():
     path = "nhl_skaters.json"
     data = json.load(open(path)) if os.path.exists(path) else {}
-    if "_done" not in data: data = {}   # the first build hit the 10,000-row cap: start again
+    if data.get("_v") != 2: data = {}   # earlier builds paged without a fixed order (rows missed or doubled): start again
     today = datetime.date.today(); cur = today.year if today.month >= 8 else today.year - 1
     done = set(data.get("_done", []))
     for y in range(2015, cur + 1):
         if y < cur and y in done: continue   # finished seasons only need fetching once
         data.update(season_rows(f"{y}{y+1}"))
         if y < cur: done.add(y)
-    data["_done"] = sorted(done)
+    data["_done"] = sorted(done); data["_v"] = 2
     json.dump(data, open(path, "w"), separators=(",", ":"))
 
 if __name__ == "__main__":

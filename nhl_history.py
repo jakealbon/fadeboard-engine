@@ -37,7 +37,7 @@ def main():
     for y in range(2015, end.year + (1 if end.month >= 8 else 0)):
         sid = f"{y}{y+1}"; startrow = 0; total = 1
         while startrow < total:
-            j = get(f"https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&start={startrow}&limit=100&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2") or {}
+            j = get(f"https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&start={startrow}&limit=100&sort=%5B%7B%22property%22:%22gameId%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2") or {}
             total = j.get("total", 0); startrow += 100
             for x in j.get("data", []):
                 if x.get("gamesStarted"): starters[(x["gameDate"][:10], x["teamAbbrev"])] = dict(id=x["playerId"], name=x.get("goalieFullName"), sa=x.get("shotsAgainst"), ga=x.get("goalsAgainst"))
@@ -47,7 +47,7 @@ def main():
     for y in range(2015, end.year + (1 if end.month >= 8 else 0)):
         sid = f"{y}{y+1}"; startrow = 0; total = 1
         while startrow < total:
-            j = get(f"https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=true&start={startrow}&limit=100&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2") or {}
+            j = get(f"https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=true&start={startrow}&limit=100&sort=%5B%7B%22property%22:%22gameId%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22teamId%22,%22direction%22:%22ASC%22%7D%5D&cayenneExp=seasonId={sid}%20and%20gameTypeId%3E=2") or {}
             total = j.get("total", 0); startrow += 100
             for x in j.get("data", []):
                 if x.get("gameDate") and x.get("teamFullName"):
