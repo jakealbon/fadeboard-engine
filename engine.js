@@ -1553,6 +1553,27 @@ if (MODE === "steam"){   // Chippy's Best for the ChippyTips website: board verd
         sel: selW || "", pr: +d.toFixed(3), lg: f.league || g?.league || "", game: g ? gName(g) : (f.game || ""), sc: g ? gScore(g) : "", who: [...new Set(ts.map(t => t.tipster))].slice(0, 6).join(", ") });
     }
   }
+  /* 🌟 DK v Circa tracker (admins only on the website): every market where DraftKings and Circa money sit on opposite sides,
+     65%+ each way, graded on Circa's side at Pinnacle's closing price, 1 nut each. Stars by the gap between the two books' money:
+     1 = 30-49 points, 2 = 50-69, 3 = 70+. Same rule as the website's 🌟 badges. Tracking only: never posted as a play. */
+  { const ok = v => v !== null && v > 1 && v < 99;
+    for (const g of games){
+      if (!graded(g) || g.preseason || g.inplay) continue;
+      const dk = g.splits?.dk, ci = g.splits?.circa; if (!dk || !ci) continue;
+      for (const [mk, key, sides, nm] of [["spread", "spreadAwayHandle", ["away", "home"], "Spread"], ["total", "overHandle", ["over", "under"], "Total"], ["ml", "mlAwayHandle", ["away", "home"], "ML"]]){
+        const a = num(dk[key]), b = num(ci[key]); if (!ok(a) || !ok(b)) continue;
+        if (!((a >= 65 && b <= 35) || (a <= 35 && b >= 65))) continue;
+        const gap = Math.abs(a - b), stars = gap >= 70 ? 3 : gap >= 50 ? 2 : 1, side = b > 50 ? sides[0] : sides[1];
+        let q = bookQuote(g.pin?.c || null, mk, side);
+        if (!q){ if (mk === "ml") continue; const c = num(mk === "spread" ? g.spread?.cur : g.total?.cur); if (c === null) continue; q = { line: mk === "spread" ? (side === "home" ? c : -c) : c, price: 1.91 }; }
+        const r = tipRes({ market: mk, side, line: q.line }, g); if (!["W", "L", "P"].includes(r)) continue;
+        const d = +q.price, who = mk === "total" ? (side === "over" ? "Over" : "Under") : g[side];
+        const sel = mk === "ml" ? `${who} ML` : mk === "total" ? `${who} ${q.line}` : `${who} ${fmtLine(q.line)}`;
+        items.push({ kind: "graded", v: 2, k: `dk|${g.id}|${mk}`, s: "dk" + stars, d: etDate(g.kickoff || g.date + "T16:00:00Z"), kick: g.kickoff || null, r,
+          u: +(r === "W" ? d - 1 : r === "L" ? -1 : 0).toFixed(3), st: 1, sel, pr: +d.toFixed(3), lg: g.league, game: gName(g), sc: gScore(g), who: `${nm}: DK ${a}% v Circa ${b}% (gap ${gap})` });
+      }
+    }
+  }
   process.stdout.write(JSON.stringify({ items, t: NOW.toISOString() }));
   process.exit(0);
 }
