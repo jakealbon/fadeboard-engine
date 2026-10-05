@@ -39,6 +39,11 @@ def main():
                     if old.get(k): g[k] = old[k]
                 games[g["id"]] = g
     print("games", len(games))
+    def safe(fn):
+        def w(g):
+            try: return fn(g)
+            except Exception as e: print("skip", g.get("id"), e, file=sys.stderr); return g.get("id"), None
+        return w
     def odds(g):
         j = get(f"https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/{g['id']}/competitions/{g['id']}/odds", tries=2) or {}
         for o in j.get("items", []):
@@ -46,11 +51,13 @@ def main():
             hc, ac = (h.get("close") or {}), (a.get("close") or {})
             hm, am = (hc.get("moneyLine") or {}).get("decimal"), (ac.get("moneyLine") or {}).get("decimal")
             sp = (hc.get("pointSpread") or {}).get("american")
-            if hm and am: return g["id"], dict(src=(o.get("provider") or {}).get("name"), h=hm, a=am, sp=float(sp) if sp not in (None, "", "EVEN") else None, t=o.get("overUnder"))
+            try: sp = float(sp)
+            except (TypeError, ValueError): sp = 0.0 if str(sp).upper() in ("PK", "EVEN") else None
+            if hm and am: return g["id"], dict(src=(o.get("provider") or {}).get("name"), h=hm, a=am, sp=sp, t=o.get("overUnder"))
         return g["id"], None
     todo = [g for g in games.values() if g["date"] >= "2019-08-01" and g["hg"] is not None and "odds" not in g]
     with cf.ThreadPoolExecutor(12) as ex:
-        for gid, o in ex.map(odds, todo): games[gid]["odds"] = o
+        for gid, o in ex.map(safe(odds), todo): games[gid]["odds"] = o
     print("odds", sum(1 for g in games.values() if g.get("odds")))
     box = H.get("box", {})
     def summary(g):
@@ -73,7 +80,7 @@ def main():
     todo = [g for g in games.values() if g["season"] >= 2021 and g["hg"] is not None and g["id"] not in box]
     print("box scores to fetch", len(todo))
     with cf.ThreadPoolExecutor(12) as ex:
-        for gid, b in ex.map(summary, todo):
+        for gid, b in ex.map(safe(summary), todo):
             if b: box[gid] = b
     json.dump(dict(asof=datetime.datetime.utcnow().isoformat() + "Z", games=sorted(games.values(), key=lambda g: g["date"]), box=box), open(path, "w"), separators=(",", ":"))
 
