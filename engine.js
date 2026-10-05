@@ -36,6 +36,8 @@ function followSig(g, mk){
   const first = mk === "total" ? "over" : "away", second = mk === "total" ? "under" : "home";
   const side = v >= 50 ? first : second, share = side === first ? v : 100 - v;
   if (share < S.circaMin) return null;
+  /* 98%+ of Circa's money a day or more before the start is usually one or two early bets in a thin market, not a signal (5 Oct 2026) */
+  if (share >= 98 && g.kickoff && Date.parse(g.kickoff) - Date.now() > 24 * 3600e3) return null;
   const dv = num(g.splits?.dk?.[HKEY[mk]]);
   const dkShare = dv === null ? null : (side === first ? dv : 100 - dv);
   const split = dkShare !== null && dkShare <= 40;
@@ -1498,6 +1500,7 @@ if (MODE === "steam"){   // Chippy's Best for the ChippyTips website: board verd
     const V = verdictFor(g);
     for (const axis of ["side", "total"]){
       const v = V[axis]; if (!v || !["Strong", "Solid", "Lean"].includes(v.rating)) continue;
+      if (v.mk !== "ml" && num(v.line) === null) continue;   // no line yet (only splits came in): nothing to bet, so not listed
       items.push({ kind: "verdict", key: `best|${g.id}|${axis}|${v.dir}`, league: g.league, gameId: g.id, away: g.away, home: g.home,
         awayName: fullName(g.league, g.away), homeName: fullName(g.league, g.home), kickoff: g.kickoff,
         rating: v.rating, stake: v.stake || 1, market: v.mk, side: v.dir, line: v.mk === "ml" ? null : v.line,
@@ -1645,7 +1648,8 @@ if (MODE === "plays"){
     const V = verdictFor(g);
     for (const axis of ["side", "total"]){
       const v = V[axis]; if (!v) continue;
-      if (!(v.rating === "Strong" || v.rating === "Solid") || (v.stake || 0) < 0.5) continue;   // Discord gets Strong and Solid plays (Solid is 0.5 nut from 5 Oct 2026)
+      if (!(v.rating === "Strong" || v.rating === "Solid") || (v.stake || 0) < 0.5) continue;
+      if (v.mk !== "ml" && num(v.line) === null) continue;   // no line yet: wait until there is one   // Discord gets Strong and Solid plays (Solid is 0.5 nut from 5 Oct 2026)
       const key = `best|${g.id}|${axis}|${v.dir}`;
       const opp = oppTaken(g.id, v.mk, v.dir);
       if (opp){ flipFlag(g, axis, opp, `${RATING_TXT[v.rating] || v.rating} ${v.label}`); continue; }
