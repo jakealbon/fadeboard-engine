@@ -64,7 +64,10 @@ function tipW(name, market){
 }
 const effN = (names, market) => +[...names].reduce((a, n) => a + tipW(n, market), 0).toFixed(2);
 function followPlan(g, mk, fs){
-  const stake = bigDog(g, mk, fs.fade) ? 0.5 : fs.split ? 1.5 : 1;
+  /* Circa follows were the best play type in week 1 (10-3), so stakes went up a notch: 1.25u, 1.75u when DK money is the
+     other way (7 Oct 2026, Jake). The config doc's rules.circaStake ([normal, split]) changes this without a new engine. */
+  const cs = Array.isArray(S.circaStake) ? S.circaStake : [1.25, 1.75];
+  const stake = bigDog(g, mk, fs.fade) ? 0.5 : fs.split ? cs[1] : cs[0];
   let ml = null;
   if (S.sprinkle && mk === "spread"){ const d = dec(num(g.ml?.[fs.fade])); if (d !== null && d >= 2) ml = { stake: +(stake * 0.25).toFixed(3), dec: d }; }
   return { stake, ml };
