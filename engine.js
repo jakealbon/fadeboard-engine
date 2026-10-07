@@ -477,6 +477,13 @@ const earlyLine = g => { const e = earlyInfo(g); return e ? `⚠️ Early market
 /* tips */
 const tipList = [], vsinList = []; for (const [date, d] of Object.entries(tipDocs)) for (const [id, t] of Object.entries(d.tips || {})) if (t) (t.kind === "vsin" ? vsinList : tipList).push({ ...t, id, date });   // VSiN picks are tracked on their own, not in consensus
 const tipGame = t => (t.gameId && byId[t.gameId]) || games.find(g => g.league === t.league && g.away === t.away && g.home === t.home && etDate(g.kickoff || g.date + "T16:00:00Z") === t.date) || null;
+/* a "total" pick well under the game total is really a team total (SportsLine sometimes leaves off the label, e.g. MLB "Over 3.5"
+   on a 7.5 game). Keep it out of the game-total consensus and verdict (7 Oct 2026). */
+for (const t of tipList){
+  if (t.market !== "total") continue;
+  const g = tipGame(t), gt = g ? num(g.total?.cur) : null, ln = num(t.line);
+  if (gt && ln !== null && ln < gt * 0.7){ t.market = "teamtotal"; t.selection = /team total/i.test(t.selection || "") ? t.selection : `Team total ${t.selection || ""}`.trim(); }
+}
 const tipKey = t => { const base = t.gameId || `${t.league}|${t.game}|${t.date}`; return t.market === "prop" ? `${base}|prop|${String(t.selection || "").toLowerCase().replace(/\s+/g, " ").trim()}` : `${base}|${t.market}|${t.team || ""}|${t.side}`; };
 const worstTip = (tips, side) => { const w = tips.filter(t => num(t.line) !== null); if (!w.length) return null; const hi = side === "over"; return w.reduce((b, t) => (hi ? num(t.line) > num(b.line) : num(t.line) < num(b.line)) ? t : b); };
 function tipGroups(){
@@ -1277,6 +1284,8 @@ function apply(nonce){
       const lab = String(label || "").replace(/\s[+-]\d+$/, "").trim();
       let market = /PlayerProp/i.test(typ) ? "prop" : /TeamTotal/i.test(typ) || /team total/i.test(mdisp) ? "teamtotal" : /spread|run line|puck line/i.test(mname + " " + mdisp) || /Spread/i.test(typ) ? "spread" : /money/i.test(mname + " " + mdisp) || /MoneyLine/i.test(typ) ? "ml" : /total|over/i.test(mname + " " + mdisp) || /OverUnder/i.test(typ) ? "total" : "prop";
       const ou = /\bover\b/i.test(lab) ? "over" : /\bunder\b/i.test(lab) ? "under" : null;
+      { const gt = num(g.total?.cur), ln0 = (lab.match(/\d+(\.\d+)?/g) || []).map(Number).pop();   // an unlabelled team total (line far under the game total)
+        if (market === "total" && gt && ln0 != null && ln0 < gt * 0.7) market = "teamtotal"; }
       const side = market === "spread" || market === "ml" ? side0 : ou; if (!side) continue;
       const nums = lab.match(/[+-]?\d+(\.\d+)?/g) || [];
       const line = market === "ml" ? null : market === "spread" ? (+(nums[nums.length - 1] ?? 0)) : nums.length ? +nums[nums.length - 1] : null;
@@ -1285,6 +1294,7 @@ function apply(nonce){
       const prior = slTip.get(slId) || tipIdx.get(pkey(who, g.id, market, side, line)) || tipIdx.get(pkey(who, `${g.away} @ ${g.home}`, market, side, line));
       if (prior){
         const upd = {};
+        if (market === "teamtotal" && prior.market === "total"){ upd.market = "teamtotal"; upd.team = side0 === "home" || side0 === "away" ? side0 : null; upd.selection = lab; }
         if (res && !prior.result){ upd.result = res; upd.settledBy = "SportsLine"; upd.settledAt = now; stats.tipsSettled++; }
         if (!prior.slId){ upd.slId = slId; upd.slAbbr = s.abbr; }
         if (!started && !prior.result && odds != null && prior.price !== odds) upd.price = odds;
