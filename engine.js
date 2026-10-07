@@ -1,6 +1,6 @@
 const num = v => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
 const fmtLine = v => v === null ? "–" : (v > 0 ? "+" + v : v === 0 ? "PK" : String(v));
-const dec = v => v === null || v === 0 ? null : (v > 0 ? 1 + v / 100 : 1 + 100 / -v);
+const dec = v => v === null || v === 0 ? null : (v > 1 && v < 20 ? v : v > 0 ? 1 + v / 100 : 1 + 100 / -v);   // a decimal price (Pinnacle plays) is kept as is (7 Oct 2026)
 const fmtOdds = v => { const d = dec(v); return d === null ? "–" : d.toFixed(2); };
 const implied = o => o === null ? null : (o < 0 ? -o / (-o + 100) : 100 / (o + 100));
 const started = g => g.kickoff && new Date(g.kickoff).getTime() < Date.now();
@@ -47,8 +47,24 @@ function followSig(g, mk){
   else { fadeLine = num(g.ml?.[side]); label = `${g[side]} ${fmtOdds(fadeLine)}`; }
   return { fade: side, fadeLine, share, dkShare, split, label };
 }
+/* big underdogs (decimal 3.0 or more, about +200): half a unit at most (7 Oct 2026, Jake) */
+const BIG_DOG = 3;
+const bigDog = (g, mk, side) => mk === "ml" && (dec(num(g?.ml?.[side])) ?? 0) >= BIG_DOG;
+/* tipster weights: 1 is normal. Losing tipsters count for less, SportsLine grade B counts for nothing (7 Oct 2026, Jake).
+   A number applies to every market; an object sets markets (spread, total, ml, prop) with "*" as the default.
+   The config doc's rules.tipW overrides these without a new engine. */
+const TIPW0 = { "SportsLine model (grade B)": 0, "Eric Cohen": 0.5, "Adam Silverstein": { spread: 0.5, "*": 1 }, "Larry Hartstein": { spread: 0.5, "*": 1 },
+  "David Bearman": 1.25, "Adam Thompson": 1.25, "Micah Roberts": 1.25, "Prop Bet Guy": 1.25, "R.J. White": { prop: 1.25, "*": 1 } };
+function tipW(name, market){
+  const w = { ...TIPW0, ...((typeof S !== "undefined" && S && S.tipW) || {}) }[name];
+  if (w == null) return 1;
+  if (typeof w === "number") return w;
+  const mk = /prop/i.test(market || "") ? "prop" : market;
+  return w[mk] ?? w["*"] ?? 1;
+}
+const effN = (names, market) => +[...names].reduce((a, n) => a + tipW(n, market), 0).toFixed(2);
 function followPlan(g, mk, fs){
-  const stake = fs.split ? 1.5 : 1;
+  const stake = bigDog(g, mk, fs.fade) ? 0.5 : fs.split ? 1.5 : 1;
   let ml = null;
   if (S.sprinkle && mk === "spread"){ const d = dec(num(g.ml?.[fs.fade])); if (d !== null && d >= 2) ml = { stake: +(stake * 0.25).toFixed(3), dec: d }; }
   return { stake, ml };
@@ -136,7 +152,7 @@ const TIERS = [0.5, 1, 1.5];
 function stakePlan(g, mk, sig){
   const conf = (sig.gap !== null && sig.gap >= 10 ? 1 : 0) + (sig.rlm ? 1 : 0);
   const noCirca = S.circaTie && sig.circaPub === null;
-  const stake = (S.tiered ? TIERS[conf] : 1) * (noCirca ? 0.5 : 1);
+  const stake = Math.min((S.tiered ? TIERS[conf] : 1) * (noCirca ? 0.5 : 1), bigDog(g, mk, sig.fade) ? 0.5 : 9);
   let ml = null;
   if (S.sprinkle && mk === "spread"){
     const d = dec(num(g.ml?.[sig.fade]));
@@ -177,14 +193,14 @@ function verdict(g, groups){
   for (const gr of groups || []){
     if (!["spread", "total", "ml"].includes(gr.market)) continue;
     let w = 0, why = "";
-    if (gr.model){ w = /^A/i.test(gr.grade || "") ? 1.5 : /^B/i.test(gr.grade || "") ? 1 : 0; why = `SportsLine model grade ${gr.grade}`; hasModel.add(gr.market); }
+    if (gr.model){ w = /^A/i.test(gr.grade || "") ? 1.5 : /^B/i.test(gr.grade || "") ? 0.5 : 0; why = `SportsLine model grade ${gr.grade}`; hasModel.add(gr.market); }   // grade B halved (7 Oct 2026): off consensus, light in the verdict
     else if (gr.sys){ w = 0.5 * gr.n; why = gr.n > 1 ? `${gr.n} systems` : "system"; }
-    else { w = gr.n >= 2 ? Math.min(gr.n, 3) : 0.5; why = gr.n >= 2 ? `${gr.n} tipsters` : "1 tipster"; }
+    else { const e = gr.eff ?? gr.n; w = gr.n >= 2 && e >= 1.5 ? Math.min(e, 3) : 0.5 * Math.min(e, 1.25); why = gr.n >= 2 ? `${gr.n} tipsters` : "1 tipster"; }
     if (w) add(axisOf(gr.market), gr.side, w, why, gr.market);
   }
   for (const mk of ["spread", "total", "ml"]){
     const m = g.model?.[mk]; if (!m || !m.side || hasModel.has(mk) || !/^[AB]/i.test(m.grade || "")) continue;
-    add(axisOf(mk), m.side, /^A/i.test(m.grade) ? 1.5 : 1, `SportsLine model grade ${m.grade}`, mk);
+    add(axisOf(mk), m.side, /^A/i.test(m.grade) ? 1.5 : 0.5, `SportsLine model grade ${m.grade}`, mk);
   }
   for (const axis of ["side", "total"]){   // Pinnacle movement since it opened, stronger when it goes against the public
     const pm = typeof pinMove === "function" ? pinMove(g, axis) : null; if (!pm) continue;
@@ -210,8 +226,19 @@ function verdict(g, groups){
     if (mk === "spread"){ const c = num(g.spread?.cur); line = c === null ? null : (dir === "home" ? c : -c); price = num(g.spreadPrice?.[dir]) ?? -110; label = `${g[dir]} ${fmtLine(line)}`; }
     else if (mk === "total"){ line = num(g.total?.cur); price = num(g.totalPrice?.[dir]) ?? -110; label = `${dir === "over" ? "Over" : "Under"} ${line ?? "–"}`; }
     else { price = num(g.ml?.[dir]); label = `${g[dir]} ML`; }
+    /* big ML underdog in a points sport: take the points instead (7 Oct 2026, Jake) */
+    let big = false;
+    if (axis === "side" && mk === "ml" && (dec(price) ?? 0) >= BIG_DOG){
+      big = true;
+      const c = num(g.spread?.cur);
+      if (!["MLB", "NHL"].includes(g.league) && c !== null){ mk = "spread"; line = dir === "home" ? c : -c; price = num(g.spreadPrice?.[dir]) ?? -110; label = `${g[dir]} ${fmtLine(line)}`; }
+    }
+    if (axis === "side" && mk === "spread" && (line ?? 0) >= 14) big = true;
+    /* stakes: Strong 1.5u; Solid 0.5u with steam, 0.25u without (no Discord post); Lean 0.5u on the board only; big dogs 0.5u at most */
+    let stake = rating === "Strong" ? 1.5 : rating === "Solid" ? (st ? 0.5 : 0.25) : rating === "Lean" ? 0.5 : 0;
+    if (big) stake = Math.min(stake, 0.5);
     out[axis] = { axis, dir, mk, line, price, label, score: +adj.toFixed(2), raw: +top.score.toFixed(2), against: +against.toFixed(2), againstWhy,
-      rating, why: [...new Set(top.why)], split, steam: st, early, hrs, stake: rating === "Strong" ? 1.5 : rating === "Solid" ? 0.5 : rating === "Lean" ? 0.5 : 0 };   // Solid cut to 0.5 nut (5 Oct 2026, Jake)
+      rating, why: [...new Set(top.why)], split, steam: st, early, hrs, big, stake };
   }
   return out;
 }
@@ -455,7 +482,7 @@ function tipGroups(){
   return [...m.entries()].map(([key, tips]) => {
     const f = tips[0], g = tipGame(f), names = [...new Set(tips.map(t => t.tipster))];
     const decs = tips.map(t => dec(num(t.price))).filter(Boolean);
-    return { key, tips, f, g, n: names.length, names, dec: decs.length ? decs.reduce((a, b) => a + b, 0) / decs.length : 1.91, kickoff: g?.kickoff || f.kickoff };
+    return { key, tips, f, g, n: names.length, names, eff: effN(names, f.market), dec: decs.length ? decs.reduce((a, b) => a + b, 0) / decs.length : 1.91, kickoff: g?.kickoff || f.kickoff };
   });
 }
 
@@ -469,8 +496,9 @@ function oppInfo(t){
   return o ? { n: o.n, names: o.names, key: o.key } : { n: 0, names: [], key: oppKeyOf(t.key) };
 }
 /* consensus stake: 1u plus 0.5u per extra tipster, capped at 1.5u. Both sides can go out; a disagreement is flagged in the message, not blocked. */
-const consStake = t => Math.min(1.5, 1 + 0.5 * (t.n - 1));   // capped at 1.5 nuts however many agree (5 Oct 2026, Jake)
-const consOk = t => t.n >= 2;
+/* weighted by tipster (7 Oct 2026): losing tipsters count for less, so their groups stake less; big dogs 0.5u at most */
+const consStake = t => { const e = t.eff ?? t.n, s = Math.max(0.5, Math.min(1.5, 1 + 0.5 * (e - 1))); return (t.f?.market === "ml" && (t.dec ?? 0) >= BIG_DOG) ? Math.min(s, 0.5) : +s.toFixed(2); };   // capped at 1.5 nuts (5 Oct 2026, Jake)
+const consOk = t => t.n >= 2 && (t.eff ?? t.n) >= 1.5;
 
 /* verdict inputs: every tip group (incl. systems and SportsLine model) on this game */
 function allGroupsFor(g){
@@ -478,7 +506,7 @@ function allGroupsFor(g){
   for (const t of tipList){ const tg = tipGame(t); if (!tg || tg.id !== g.id) continue; const k = tipKey(t); if (!mp.has(k)) mp.set(k, []); mp.get(k).push(t); }
   return [...mp.values()].map(ts => {
     const f = ts[0], model = ts.every(t => /^SportsLine model/i.test(t.tipster)), names = new Set(ts.map(t => t.tipster));
-    return { market: f.market, side: f.side, n: names.size, sys: !model && ts.every(t => t.kind === "system"), model, grade: model ? (f.tipster.match(/grade ([A-F][+-]?)/i) || [])[1] : null };
+    return { market: f.market, side: f.side, n: names.size, eff: effN(names, f.market), sys: !model && ts.every(t => t.kind === "system"), model, grade: model ? (f.tipster.match(/grade ([A-F][+-]?)/i) || [])[1] : null };
   });
 }
 const verdictFor = g => verdict(g, allGroupsFor(g));
@@ -610,7 +638,7 @@ function gradeMarker(m){
   return null;
 }
 function markerUnits(m, r){
-  let u = r === "W" ? (dec(num(m.price)) ?? 1.91) - 1 : r === "L" ? -1 : 0; u *= m.stake;
+  let u = r === "W" ? (dec(num(m.price)) ?? 1.91) - 1 : r === "L" ? -1 : 0; u *= (m.stake ?? 1);
   if (m.ml && g0(m)){ const rr = gradeMarker({ ...m, market: "ml", ml: null }); u += rr === "W" ? (m.ml.dec - 1) * m.ml.stake : rr === "L" ? -m.ml.stake : 0; }
   return u;
 }
@@ -885,6 +913,8 @@ if (MODE === "ctxdocs"){   // node engine.js <dir> ctxdocs <result.json> [more.j
       const g = byId[key]; if (!g || !c) continue;
       const { kickoff, ...ctx } = c, upd = { ctx };
       if (!g.kickoff && kickoff) upd.kickoff = kickoff;
+      /* travel saved on the game so it can be tested later (7 Oct 2026, Jake) */
+      try { const tr = travelInfo({ ...g, ctx, kickoff: g.kickoff || kickoff }); if (tr){ const one = x => x ? [x.zones, +x.body.toFixed(1), x.early ? 1 : x.late ? 2 : 0] : null; upd.trv = { a: one(tr.away), h: one(tr.home), n: ctx.neutral ? 1 : 0 }; } } catch (e){}
       ((docs[g.dayId] = docs[g.dayId] || { games: {} }).games)[key] = upd;
     }
   }
