@@ -1229,7 +1229,13 @@ function apply(nonce){
       if (!due(g) && !g._new) continue;
       const sp = { spreadAwayBets: sbA, spreadAwayHandle: shA, overBets: ob, overHandle: oh, mlAwayBets: mbA, mlAwayHandle: mhA, t: now };
       const snap = { t: now, b, sh: spH, sb: sbA, sm: shA, tl: tot, ob, om: oh, ma: mlA, mb: mbA, mm: mhA };
-      const patch = { league: lg, away: g.away, home: g.home, splits: { [b]: sp }, snaps: [...(g.snaps || []), snap].slice(-8), sources: [...new Set([...(g.sources || []), b === "dk" ? "VSiN (DraftKings)" : "VSiN (Circa)"])], updatedAt: now };
+      /* splits timeline: a point only when something moved (2+ points on any split, or the spread/total line), first point always kept, 24 per book */
+      const tn = v => v == null || v === "" || isNaN(+v) ? null : +v;
+      const tp = [Math.round(NOW.getTime() / 6e4), tn(sbA), tn(shA), tn(ob), tn(oh), tn(mbA), tn(mhA), tn(spH), tn(tot), tn(mlA)];
+      const tOld = (g.tl && g.tl[b]) || [], tLast = tOld[tOld.length - 1];
+      const tMoved = !tLast || [1, 2, 3, 4, 5, 6].some(i => (tp[i] == null) !== (tLast[i] == null) || (tp[i] != null && Math.abs(tp[i] - tLast[i]) >= 2)) || tp[7] !== tLast[7] || tp[8] !== tLast[8];
+      const tNew = tMoved ? [...tOld, tp] : null;
+      const patch = { league: lg, away: g.away, home: g.home, splits: { [b]: sp }, snaps: [...(g.snaps || []), snap].slice(-8), ...(tNew ? { tl: { [b]: tNew.length > 24 ? [tNew[0], ...tNew.slice(-23)] : tNew } } : {}), sources: [...new Set([...(g.sources || []), b === "dk" ? "VSiN (DraftKings)" : "VSiN (Circa)"])], updatedAt: now };
       if (g._new){ patch.final = null; patch.firstSeen = g.firstSeen; patch.kickoff = g.kickoff; }
       if (!g.kickoff && espnE?.ko) patch.kickoff = espnE.ko;
       if (b === "dk" && !(g.sources || []).includes("SportsLine")){
@@ -1557,7 +1563,7 @@ if (MODE === "intel"){   // one compact record per game for the website's Game C
       return [t.tipster || "", model ? "m" : KIND[t.kind] || "t", t.market || "", t.side || "", num(t.line), tdec(t.price), t.market === "prop" ? (t.selection || "") : "", gradeTip(t, g), t.kind === "tipster" && !model ? String(t.note || "").slice(0, 420) : "", t.record || ""]; })
       .sort((a, b) => (a[1] === "t" ? 0 : 1) - (b[1] === "t" ? 0 : 1)).slice(0, 60);
     items[g.id] = { lg: g.league, d: g.date || etDate(g.kickoff), ko: g.kickoff, a: g.away, h: g.home, an: fullName(g.league, g.away), hn: fullName(g.league, g.home),
-      sp, v, tips, ea: earlyInfo(g) ? 1 : 0, fin: graded(g) ? [+g.final.away, +g.final.home] : null };
+      sp, ...(g.tl && (g.tl.dk?.length > 1 || g.tl.circa?.length > 1) ? { tl: Object.fromEntries([["dk", "dk"], ["circa", "ci"]].filter(([b]) => g.tl[b]?.length).map(([b, s]) => [s, g.tl[b].length > 16 ? [g.tl[b][0], ...g.tl[b].slice(-15)] : g.tl[b]])) } : {}), v, tips, ea: earlyInfo(g) ? 1 : 0, fin: graded(g) ? [+g.final.away, +g.final.home] : null };
   }
   process.stdout.write(JSON.stringify({ items, t: NOW.toISOString() }));
   process.exit(0);
@@ -1684,6 +1690,7 @@ if (MODE === "board"){   // the board's own records, slimmed, for the website co
     const ko = g0.kickoff || (d.date ? d.date + "T16:00:00Z" : null); if (!ko || ko < cut || ko > until) continue;
     const g = { ...g0, dayId, league: g0.league || d.league, date: d.date };
     if (Array.isArray(g.snaps)) g.snaps = g.snaps.slice(-3);
+    delete g.tl;   // the splits timeline goes to the site with the game record (intel), not the board copy
     if (g.pin && Array.isArray(g.pin.h)) g.pin = { ...g.pin, h: g.pin.h.slice(-6) };
     const h = hash(g); hashes["g:" + id] = h; if (prev["g:" + id] !== h) outG[id] = g;
   }
