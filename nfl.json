@@ -1,5 +1,5 @@
 {
- "asof": "2026-10-07T20:39:06Z",
+ "asof": "2026-10-08T01:02:25Z",
  "version": "nfl-1",
  "coef": [
   0.121,
@@ -151,6 +151,114 @@
    "home": "DEN",
    "line_home": 3.4,
    "p_home": 0.4001
+  },
+  {
+   "espn": "401872996",
+   "game_id": "2026_06_HOU_JAX",
+   "gameday": "2026-10-18",
+   "away": "HOU",
+   "home": "JAX",
+   "line_home": -5.1,
+   "p_home": 0.6462
+  },
+  {
+   "espn": "401872997",
+   "game_id": "2026_06_BAL_CLE",
+   "gameday": "2026-10-18",
+   "away": "BAL",
+   "home": "CLE",
+   "line_home": 2.6,
+   "p_home": 0.4223
+  },
+  {
+   "espn": "401872998",
+   "game_id": "2026_06_CAR_PHI",
+   "gameday": "2026-10-18",
+   "away": "CAR",
+   "home": "PHI",
+   "line_home": -2.2,
+   "p_home": 0.5648
+  },
+  {
+   "espn": "401872999",
+   "game_id": "2026_06_CHI_ATL",
+   "gameday": "2026-10-18",
+   "away": "CHI",
+   "home": "ATL",
+   "line_home": 0.7,
+   "p_home": 0.4804
+  },
+  {
+   "espn": "401873000",
+   "game_id": "2026_06_NO_NYG",
+   "gameday": "2026-10-18",
+   "away": "NO",
+   "home": "NYG",
+   "line_home": -3.3,
+   "p_home": 0.5973
+  },
+  {
+   "espn": "401873001",
+   "game_id": "2026_06_NYJ_NE",
+   "gameday": "2026-10-18",
+   "away": "NYJ",
+   "home": "NE",
+   "line_home": -9.5,
+   "p_home": 0.7595
+  },
+  {
+   "espn": "401873002",
+   "game_id": "2026_06_PIT_TB",
+   "gameday": "2026-10-18",
+   "away": "PIT",
+   "home": "TB",
+   "line_home": -0.8,
+   "p_home": 0.5237
+  },
+  {
+   "espn": "401873003",
+   "game_id": "2026_06_TEN_IND",
+   "gameday": "2026-10-18",
+   "away": "TEN",
+   "home": "IND",
+   "line_home": -8.4,
+   "p_home": 0.7326
+  },
+  {
+   "espn": "401873004",
+   "game_id": "2026_06_ARI_LA",
+   "gameday": "2026-10-18",
+   "away": "ARI",
+   "home": "LA",
+   "line_home": -10.6,
+   "p_home": 0.7838
+  },
+  {
+   "espn": "401873005",
+   "game_id": "2026_06_BUF_LV",
+   "gameday": "2026-10-18",
+   "away": "BUF",
+   "home": "LV",
+   "line_home": 5.2,
+   "p_home": 0.3511
+  },
+  {
+   "espn": "401873006",
+   "game_id": "2026_06_LAC_KC",
+   "gameday": "2026-10-18",
+   "away": "LAC",
+   "home": "KC",
+   "line_home": -8.6,
+   "p_home": 0.7385
+  },
+  {
+   "espn": "401873007",
+   "game_id": "2026_06_DAL_GB",
+   "gameday": "2026-10-18",
+   "away": "DAL",
+   "home": "GB",
+   "line_home": -0.9,
+   "p_home": 0.5273
   }
  ],
  "ratings": {
