@@ -1139,7 +1139,8 @@ function plan(){
   if (toSettle.length) why.push(`${toSettle.length} games to settle`);
   if (tipsOpen.length) why.push(`${tipsOpen.length} tips to settle`);
   if (H % 3 === 0) why.push("3-hourly sweep");
-  if (H === 13 || H === 14) why.push("daily results");
+  if (H === 15) why.push("daily results");
+  if (H === 17) why.push("results check (late games)");
   if (H === 10) why.push("week-ahead snapshot");
   if (!why.length) return { quiet: true, hour: H, why: "nothing kicks off within 6 hours and nothing to settle" };
   /* VSiN splits: how far ahead this run looks (as before: 12h every run, 30h on 3-hourly runs, the whole week at 10am) */
@@ -1399,11 +1400,20 @@ const steamSig = x => JSON.stringify(x, (k, v) => k === "price" ? r05(v) : v);  
 const h32 = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36); };
 const GRADE_FREEZE = "2026-10-04T00:00:00Z";
 function push(){
-  const H = brisHour(), modes = ["plays"]; if (H === 13 || H === 14) modes.push("daily"); if ((H === 13 || H === 14) && brisDay() === "Tue") modes.push("weekly");
+  /* results posts: 3pm Brisbane (4pm if 3pm missed), then a 5pm check reposts a summary only if late results changed it */
+  const H = brisHour(), modes = ["plays"], sumHour = H === 15 || H === 16, sweep = H === 17;
+  if (sumHour || sweep) modes.push("daily"); if ((sumHour || sweep) && brisDay() === "Tue") modes.push("weekly");
   const run = (m, extra = []) => runMode(m, extra);
   const summaries = readDoc("posts", "summaries")?.items || {};
   const msgs = [], marks = {}; let vl = {};
-  for (const m of modes){ const o = run(m); for (const x of o.messages || []) if (m === "plays" || !summaries[x.key]) msgs.push({ ...x, mode: m }); if (m === "plays"){ Object.assign(marks, o.markers || {}); vl = o.vlog || {}; } }
+  for (const m of modes){ const o = run(m);
+    for (const x of o.messages || []){
+      if (m === "plays"){ msgs.push({ ...x, mode: m }); continue; }
+      const prev = summaries[x.key], h = h32(x.content);
+      if (!prev) msgs.push({ ...x, mode: m, h });
+      else if (sweep && prev.h && prev.h !== h) msgs.push({ ...x, content: "✏️ **Updated after late results**\n" + x.content, mode: m, h });
+    }
+    if (m === "plays"){ Object.assign(marks, o.markers || {}); vl = o.vlog || {}; } }
   const sync = readDoc("config", "pushsync") || {};
   /* fixtures, game by game, without the Pinnacle/Aussie prices (the Worker fills those) */
   const tf = run("tipfix").docs || {}, fxOld = sync.fxg || {}, fxNew = {}, fxOps = [], seed = { fx: {}, sh: {} };
@@ -1464,7 +1474,7 @@ function push(){
       ` tag + JSON.stringify(out); }`].join("\n");
     const file = path.join(FB, `push-${k + 1}.js`); fs.writeFileSync(file, js); return file;
   });
-  fs.writeFileSync(path.join(FB, "push-state.json"), JSON.stringify({ nonce, msgs: msgs.map(m => ({ key: m.key, mode: m.mode })), marks, vlog: vl,
+  fs.writeFileSync(path.join(FB, "push-state.json"), JSON.stringify({ nonce, msgs: msgs.map(m => ({ key: m.key, mode: m.mode, h: m.h })), marks, vlog: vl,
     parts: parts.map(p => p.map(x => ({ t: x.o.t, i: x.o.i, hk: x.o.hk, h: x.o.h, id: x.o.id }))), fxKeep: Object.keys(tf), sNew, iNew, seed }));
   return { nonce, parts: parts.length, files, messages: msgs.length, fixtureGames: fxOps.length, steamChanges: stOps.length, gameRecords: giOps.length, heldForNextHour: held, chars: parts.map(p => p.reduce((a, x) => a + JSON.stringify(x.wire).length, 0)) };
 }
@@ -1490,7 +1500,7 @@ function pushdone(nonce){
   let posted = 0;
   st.msgs.forEach((m, i) => { if (!msgOk[i]) return; posted++;
     if (m.mode === "plays"){ for (const [d, items] of Object.entries(st.marks)) if (items[m.key]) put("posts", d, { date: d, items: { [m.key]: items[m.key] } }); }
-    else put("posts", "summaries", { items: { [m.key]: { t: now } } }); });
+    else put("posts", "summaries", { items: { [m.key]: { t: now, h: m.h } } }); });
   for (const [d, o] of Object.entries(st.vlog || {})) put("vlog", d, readDoc("vlog", d) ? { items: o.items } : o);
   /* forget fixture weeks and plays that are no longer produced, so the record stays small */
   const keep = new Set(st.fxKeep || []); for (const k of Object.keys(fxg)) if (!keep.has(k.split("|")[0])) delete fxg[k];
