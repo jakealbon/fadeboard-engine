@@ -1,5 +1,5 @@
 {
- "asof": "2026-10-09T10:38:02Z",
+ "asof": "2026-10-09T18:22:58Z",
  "version": "nfl-1",
  "coef": [
   0.12,
@@ -122,8 +122,8 @@
    "gameday": "2026-10-11",
    "away": "BAL",
    "home": "ATL",
-   "line_home": 0.3,
-   "p_home": 0.491
+   "line_home": -2.1,
+   "p_home": 0.5616
   },
   {
    "espn": "401872994",
@@ -176,8 +176,8 @@
    "gameday": "2026-10-18",
    "away": "CHI",
    "home": "ATL",
-   "line_home": 0.7,
-   "p_home": 0.4802
+   "line_home": -1.7,
+   "p_home": 0.5509
   },
   {
    "espn": "401873000",
