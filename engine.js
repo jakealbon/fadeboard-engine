@@ -1407,6 +1407,9 @@ const h32 = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++){ h ^= 
 const GRADE_FREEZE = "2026-10-04T00:00:00Z";
 function push(){
   /* results posts: 3pm Brisbane (4pm if 3pm missed), then a 5pm check reposts a summary only if late results changed it */
+  /* 9 Oct 2026, Jake: Chippy's Best stops posting to Discord (plays and its daily/weekly results) while Chippy Consensus runs in
+     shadow on the site. The plays still run so the steam feed, fixtures and game records keep reaching the site and Chippy keeps tipping. */
+  const POST_PLAYS = false;
   const H = brisHour(), modes = ["plays"], sumHour = H === 15 || H === 16, sweep = H === 17;
   if (sumHour || sweep) modes.push("daily"); if ((sumHour || sweep) && brisDay() === "Tue") modes.push("weekly");
   const run = (m, extra = []) => runMode(m, extra);
@@ -1414,6 +1417,7 @@ function push(){
   const msgs = [], marks = {}; let vl = {};
   for (const m of modes){ const o = run(m);
     for (const x of o.messages || []){
+      if (!POST_PLAYS) continue;
       if (m === "plays"){ msgs.push({ ...x, mode: m }); continue; }
       const prev = summaries[x.key], h = h32(x.content);
       if (!prev) msgs.push({ ...x, mode: m, h });
