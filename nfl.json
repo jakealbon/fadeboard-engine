@@ -1,5 +1,5 @@
 {
- "asof": "2026-10-08T18:52:36Z",
+ "asof": "2026-10-09T01:14:43Z",
  "version": "nfl-1",
  "coef": [
   0.121,
@@ -259,6 +259,15 @@
    "home": "GB",
    "line_home": -0.9,
    "p_home": 0.5273
+  },
+  {
+   "espn": "401873008",
+   "game_id": "2026_06_WAS_SF",
+   "gameday": "2026-10-19",
+   "away": "WAS",
+   "home": "SF",
+   "line_home": -10.2,
+   "p_home": 0.7741
   }
  ],
  "ratings": {
