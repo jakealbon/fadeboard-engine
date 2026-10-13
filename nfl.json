@@ -1,22 +1,13 @@
 {
- "asof": "2026-10-12T21:17:44Z",
+ "asof": "2026-10-13T06:50:05Z",
  "version": "nfl-1",
  "coef": [
-  0.105,
-  0.793,
-  14.093
+  0.102,
+  0.794,
+  14.074
  ],
- "fit_mae": 10.15,
+ "fit_mae": 10.14,
  "games": [
-  {
-   "espn": "401872994",
-   "game_id": "2026_05_BUF_LA",
-   "gameday": "2026-10-12",
-   "away": "BUF",
-   "home": "LA",
-   "line_home": -1.2,
-   "p_home": 0.5354
-  },
   {
    "espn": "401872995",
    "game_id": "2026_06_SEA_DEN",
@@ -33,7 +24,7 @@
    "away": "HOU",
    "home": "JAX",
    "line_home": -4.0,
-   "p_home": 0.6173
+   "p_home": 0.6172
   },
   {
    "espn": "401872997",
@@ -78,7 +69,7 @@
    "away": "NYJ",
    "home": "NE",
    "line_home": -9.5,
-   "p_home": 0.7601
+   "p_home": 0.76
   },
   {
    "espn": "401873002",
@@ -87,7 +78,7 @@
    "away": "PIT",
    "home": "TB",
    "line_home": -1.0,
-   "p_home": 0.5302
+   "p_home": 0.5301
   },
   {
    "espn": "401873003",
@@ -95,7 +86,7 @@
    "gameday": "2026-10-18",
    "away": "TEN",
    "home": "IND",
-   "line_home": -8.8,
+   "line_home": -8.7,
    "p_home": 0.7416
   },
   {
@@ -104,8 +95,8 @@
    "gameday": "2026-10-18",
    "away": "ARI",
    "home": "LA",
-   "line_home": -11.7,
-   "p_home": 0.8069
+   "line_home": -10.9,
+   "p_home": 0.7904
   },
   {
    "espn": "401873005",
@@ -113,8 +104,8 @@
    "gameday": "2026-10-18",
    "away": "BUF",
    "home": "LV",
-   "line_home": 6.2,
-   "p_home": 0.3235
+   "line_home": 6.5,
+   "p_home": 0.3152
   },
   {
    "espn": "401873006",
@@ -132,7 +123,7 @@
    "away": "DAL",
    "home": "GB",
    "line_home": -3.7,
-   "p_home": 0.6076
+   "p_home": 0.6075
   },
   {
    "espn": "401873008",
@@ -150,20 +141,20 @@
    "away": "NE",
    "home": "CHI",
    "line_home": 0.7,
-   "p_home": 0.4808
+   "p_home": 0.4807
   }
  ],
  "ratings": {
   "SEA": 1620.0,
   "SF": 1618.4,
   "MIN": 1608.5,
-  "BUF": 1592.7,
+  "BUF": 1604.4,
   "JAX": 1590.2,
   "NE": 1578.4,
   "DEN": 1564.2,
   "KC": 1563.9,
-  "LA": 1563.0,
   "BAL": 1560.9,
+  "LA": 1551.2,
   "CHI": 1539.0,
   "DET": 1537.0,
   "PIT": 1519.0,
