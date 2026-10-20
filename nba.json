@@ -1,5 +1,5 @@
 {
- "asof": "2026-10-20T19:19:47Z",
+ "asof": "2026-10-20T23:55:57Z",
  "version": "nba-1",
  "coef": [
   -0.533,
@@ -9,23 +9,11 @@
  "sd": 13.88,
  "games": [
   {
-   "espn": "401909088",
-   "date": "2026-10-20T19:00Z",
-   "away": "BOS",
-   "home": "DET",
-   "line_home": -2.1,
-   "p_home": 0.5598,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
    "espn": "401909089",
    "date": "2026-10-20T23:00Z",
    "away": "PHI",
    "home": "NY",
-   "line_home": -8.7,
+   "line_home": -8.8,
    "p_home": 0.7358,
    "missing": [
     0.0,
@@ -50,7 +38,7 @@
    "away": "ATL",
    "home": "ORL",
    "line_home": -2.4,
-   "p_home": 0.5699,
+   "p_home": 0.57,
    "missing": [
     0.0,
     0.0
@@ -74,7 +62,7 @@
    "away": "MIN",
    "home": "MIA",
    "line_home": -0.4,
-   "p_home": 0.5125,
+   "p_home": 0.5126,
    "missing": [
     0.0,
     0.0
@@ -134,7 +122,7 @@
    "away": "DAL",
    "home": "HOU",
    "line_home": -8.5,
-   "p_home": 0.7296,
+   "p_home": 0.7297,
    "missing": [
     0.0,
     0.0
@@ -170,7 +158,7 @@
    "away": "SAC",
    "home": "LAC",
    "line_home": -7.8,
-   "p_home": 0.7119,
+   "p_home": 0.712,
    "missing": [
     0.0,
     0.0
@@ -195,6 +183,78 @@
    "home": "OKC",
    "line_home": -5.2,
    "p_home": 0.6448,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909848",
+   "date": "2026-10-23T20:00Z",
+   "away": "CHI",
+   "home": "MIL",
+   "line_home": -1.9,
+   "p_home": 0.5552,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909095",
+   "date": "2026-10-23T23:00Z",
+   "away": "NY",
+   "home": "BOS",
+   "line_home": 1.9,
+   "p_home": 0.4448,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909843",
+   "date": "2026-10-23T23:00Z",
+   "away": "ATL",
+   "home": "CHA",
+   "line_home": -4.3,
+   "p_home": 0.622,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909844",
+   "date": "2026-10-23T23:00Z",
+   "away": "DAL",
+   "home": "IND",
+   "line_home": -1.2,
+   "p_home": 0.5338,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909845",
+   "date": "2026-10-23T23:00Z",
+   "away": "MIN",
+   "home": "ORL",
+   "line_home": -1.3,
+   "p_home": 0.5385,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909846",
+   "date": "2026-10-23T23:00Z",
+   "away": "TOR",
+   "home": "WSH",
+   "line_home": 7.2,
+   "p_home": 0.3009,
    "missing": [
     0.0,
     0.0
