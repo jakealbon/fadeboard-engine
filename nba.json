@@ -1,116 +1,20 @@
 {
- "asof": "2026-10-24T23:18:32Z",
+ "asof": "2026-10-25T04:47:19Z",
  "version": "nba-1",
  "coef": [
-  -0.539,
+  -0.543,
   1.38,
   -0.252
  ],
- "sd": 13.9,
+ "sd": 13.89,
  "games": [
-  {
-   "espn": "401909853",
-   "date": "2026-10-24T22:00Z",
-   "away": "MIA",
-   "home": "CHA",
-   "line_home": -4.5,
-   "p_home": 0.6277,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
-   "espn": "401909854",
-   "date": "2026-10-24T23:30Z",
-   "away": "BKN",
-   "home": "CLE",
-   "line_home": -11.1,
-   "p_home": 0.7868,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
-   "espn": "401909855",
-   "date": "2026-10-24T23:30Z",
-   "away": "MIL",
-   "home": "PHI",
-   "line_home": -11.1,
-   "p_home": 0.7882,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
-   "espn": "401909857",
-   "date": "2026-10-25T00:00Z",
-   "away": "WSH",
-   "home": "CHI",
-   "line_home": -5.1,
-   "p_home": 0.6431,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
-   "espn": "401909858",
-   "date": "2026-10-25T00:00Z",
-   "away": "SA",
-   "home": "DAL",
-   "line_home": 7.8,
-   "p_home": 0.2869,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
-   "espn": "401909856",
-   "date": "2026-10-25T00:30Z",
-   "away": "HOU",
-   "home": "ATL",
-   "line_home": -1.6,
-   "p_home": 0.5455,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
-   "espn": "401909859",
-   "date": "2026-10-25T01:00Z",
-   "away": "NO",
-   "home": "DEN",
-   "line_home": -11.0,
-   "p_home": 0.7847,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
-   "espn": "401909860",
-   "date": "2026-10-25T02:00Z",
-   "away": "GS",
-   "home": "PHX",
-   "line_home": -6.6,
-   "p_home": 0.6835,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
   {
    "espn": "401909861",
    "date": "2026-10-25T21:00Z",
    "away": "LAL",
    "home": "UTAH",
    "line_home": 7.4,
-   "p_home": 0.2983,
+   "p_home": 0.2982,
    "missing": [
     0.0,
     0.0
@@ -121,8 +25,8 @@
    "date": "2026-10-25T22:00Z",
    "away": "IND",
    "home": "BKN",
-   "line_home": -0.1,
-   "p_home": 0.5042,
+   "line_home": 2.4,
+   "p_home": 0.4312,
    "missing": [
     0.0,
     0.0
@@ -146,7 +50,7 @@
    "away": "TOR",
    "home": "MIN",
    "line_home": -3.3,
-   "p_home": 0.595,
+   "p_home": 0.5949,
    "missing": [
     0.0,
     0.0
@@ -169,8 +73,8 @@
    "date": "2026-10-25T23:30Z",
    "away": "DET",
    "home": "PHI",
-   "line_home": 1.4,
-   "p_home": 0.46,
+   "line_home": 3.7,
+   "p_home": 0.3945,
    "missing": [
     0.0,
     0.0
@@ -182,7 +86,7 @@
    "away": "MEM",
    "home": "SAC",
    "line_home": -1.3,
-   "p_home": 0.5369,
+   "p_home": 0.5368,
    "missing": [
     0.0,
     0.0
@@ -193,8 +97,8 @@
    "date": "2026-10-26T23:00Z",
    "away": "WSH",
    "home": "CHA",
-   "line_home": -11.3,
-   "p_home": 0.7923,
+   "line_home": -11.1,
+   "p_home": 0.7885,
    "missing": [
     0.0,
     0.0
@@ -205,8 +109,8 @@
    "date": "2026-10-26T23:00Z",
    "away": "MIN",
    "home": "CLE",
-   "line_home": -0.7,
-   "p_home": 0.5201,
+   "line_home": -0.8,
+   "p_home": 0.5225,
    "missing": [
     0.0,
     0.0
@@ -217,8 +121,8 @@
    "date": "2026-10-26T23:30Z",
    "away": "CHI",
    "home": "BOS",
-   "line_home": -10.3,
-   "p_home": 0.7703,
+   "line_home": -10.6,
+   "p_home": 0.7781,
    "missing": [
     0.0,
     0.0
@@ -229,8 +133,8 @@
    "date": "2026-10-26T23:30Z",
    "away": "DAL",
    "home": "MIA",
-   "line_home": -4.7,
-   "p_home": 0.6319,
+   "line_home": -4.8,
+   "p_home": 0.6349,
    "missing": [
     0.0,
     0.0
@@ -241,8 +145,8 @@
    "date": "2026-10-27T00:00Z",
    "away": "IND",
    "home": "MIL",
-   "line_home": -1.8,
-   "p_home": 0.552,
+   "line_home": -1.7,
+   "p_home": 0.5476,
    "missing": [
     0.0,
     0.0
@@ -253,8 +157,8 @@
    "date": "2026-10-27T00:00Z",
    "away": "PHX",
    "home": "OKC",
-   "line_home": -9.6,
-   "p_home": 0.7548,
+   "line_home": -9.4,
+   "p_home": 0.75,
    "missing": [
     0.0,
     0.0
@@ -265,8 +169,8 @@
    "date": "2026-10-27T00:30Z",
    "away": "ATL",
    "home": "HOU",
-   "line_home": -2.3,
-   "p_home": 0.5647,
+   "line_home": -3.0,
+   "p_home": 0.5863,
    "missing": [
     0.0,
     0.0
@@ -278,7 +182,7 @@
    "away": "MEM",
    "home": "UTAH",
    "line_home": -0.7,
-   "p_home": 0.521,
+   "p_home": 0.5209,
    "missing": [
     0.0,
     0.0
@@ -289,8 +193,56 @@
    "date": "2026-10-27T02:00Z",
    "away": "GS",
    "home": "DEN",
-   "line_home": -7.5,
-   "p_home": 0.7053,
+   "line_home": -7.8,
+   "p_home": 0.713,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909877",
+   "date": "2026-10-27T23:30Z",
+   "away": "BKN",
+   "home": "BOS",
+   "line_home": -12.8,
+   "p_home": 0.821,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909878",
+   "date": "2026-10-28T00:00Z",
+   "away": "DET",
+   "home": "NY",
+   "line_home": -3.8,
+   "p_home": 0.6065,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909879",
+   "date": "2026-10-28T00:00Z",
+   "away": "SAC",
+   "home": "SA",
+   "line_home": -14.0,
+   "p_home": 0.8437,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909880",
+   "date": "2026-10-28T03:00Z",
+   "away": "POR",
+   "home": "LAL",
+   "line_home": -3.4,
+   "p_home": 0.5967,
    "missing": [
     0.0,
     0.0
