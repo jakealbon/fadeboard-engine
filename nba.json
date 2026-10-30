@@ -1,5 +1,5 @@
 {
- "asof": "2026-10-29T18:30:40Z",
+ "asof": "2026-10-30T01:04:45Z",
  "version": "nba-1",
  "coef": [
   -0.552,
@@ -243,6 +243,30 @@
    "home": "HOU",
    "line_home": 0.3,
    "p_home": 0.492,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909903",
+   "date": "2026-11-01T20:30Z",
+   "away": "BOS",
+   "home": "ORL",
+   "line_home": 2.2,
+   "p_home": 0.438,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909904",
+   "date": "2026-11-01T22:00Z",
+   "away": "BKN",
+   "home": "IND",
+   "line_home": -4.7,
+   "p_home": 0.6336,
    "missing": [
     0.0,
     0.0
