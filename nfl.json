@@ -1,22 +1,13 @@
 {
- "asof": "2026-11-02T00:47:22Z",
+ "asof": "2026-11-02T11:15:11Z",
  "version": "nfl-1",
  "coef": [
-  0.067,
-  0.799,
-  13.743
+  0.071,
+  0.8,
+  13.713
  ],
- "fit_mae": 10.13,
+ "fit_mae": 10.14,
  "games": [
-  {
-   "espn": "401873035",
-   "game_id": "2026_08_PHI_WAS",
-   "gameday": "2026-11-01",
-   "away": "PHI",
-   "home": "WAS",
-   "line_home": -2.0,
-   "p_home": 0.5588
-  },
   {
    "espn": "401873036",
    "game_id": "2026_08_CHI_SEA",
@@ -24,7 +15,7 @@
    "away": "CHI",
    "home": "SEA",
    "line_home": -4.1,
-   "p_home": 0.6186
+   "p_home": 0.6188
   },
   {
    "espn": "401873037",
@@ -32,8 +23,8 @@
    "gameday": "2026-11-05",
    "away": "JAX",
    "home": "BAL",
-   "line_home": 2.8,
-   "p_home": 0.4185
+   "line_home": 4.5,
+   "p_home": 0.3687
   },
   {
    "espn": "401873038",
@@ -41,8 +32,8 @@
    "gameday": "2026-11-08",
    "away": "CIN",
    "home": "ATL",
-   "line_home": 4.1,
-   "p_home": 0.3819
+   "line_home": 4.3,
+   "p_home": 0.3756
   },
   {
    "espn": "401873039",
@@ -50,8 +41,8 @@
    "gameday": "2026-11-08",
    "away": "CLE",
    "home": "NO",
-   "line_home": -1.1,
-   "p_home": 0.5319
+   "line_home": -1.6,
+   "p_home": 0.5468
   },
   {
    "espn": "401873040",
@@ -59,8 +50,8 @@
    "gameday": "2026-11-08",
    "away": "DAL",
    "home": "IND",
-   "line_home": -0.7,
-   "p_home": 0.5215
+   "line_home": 0.1,
+   "p_home": 0.496
   },
   {
    "espn": "401873041",
@@ -68,8 +59,8 @@
    "gameday": "2026-11-08",
    "away": "DEN",
    "home": "CAR",
-   "line_home": 4.3,
-   "p_home": 0.3738
+   "line_home": 4.2,
+   "p_home": 0.3778
   },
   {
    "espn": "401873042",
@@ -77,8 +68,8 @@
    "gameday": "2026-11-08",
    "away": "DET",
    "home": "MIA",
-   "line_home": 6.0,
-   "p_home": 0.3294
+   "line_home": 6.1,
+   "p_home": 0.3269
   },
   {
    "espn": "401873043",
@@ -86,8 +77,8 @@
    "gameday": "2026-11-08",
    "away": "LA",
    "home": "WAS",
-   "line_home": 5.9,
-   "p_home": 0.3316
+   "line_home": 4.9,
+   "p_home": 0.357
   },
   {
    "espn": "401873044",
@@ -95,8 +86,8 @@
    "gameday": "2026-11-08",
    "away": "NYG",
    "home": "PHI",
-   "line_home": 1.6,
-   "p_home": 0.4532
+   "line_home": 2.5,
+   "p_home": 0.4257
   },
   {
    "espn": "401873045",
@@ -104,8 +95,8 @@
    "gameday": "2026-11-08",
    "away": "NYJ",
    "home": "KC",
-   "line_home": -9.4,
-   "p_home": 0.7563
+   "line_home": -9.1,
+   "p_home": 0.7498
   },
   {
    "espn": "401873046",
@@ -113,8 +104,8 @@
    "gameday": "2026-11-08",
    "away": "HOU",
    "home": "LAC",
-   "line_home": 3.9,
-   "p_home": 0.3868
+   "line_home": 4.4,
+   "p_home": 0.3733
   },
   {
    "espn": "401873047",
@@ -122,8 +113,8 @@
    "gameday": "2026-11-08",
    "away": "LV",
    "home": "SF",
-   "line_home": -11.6,
-   "p_home": 0.8058
+   "line_home": -11.5,
+   "p_home": 0.803
   },
   {
    "espn": "401873048",
@@ -131,8 +122,8 @@
    "gameday": "2026-11-08",
    "away": "ARI",
    "home": "SEA",
-   "line_home": -12.8,
-   "p_home": 0.8291
+   "line_home": -12.4,
+   "p_home": 0.821
   },
   {
    "espn": "401873049",
@@ -140,8 +131,8 @@
    "gameday": "2026-11-08",
    "away": "GB",
    "home": "NE",
-   "line_home": -2.9,
-   "p_home": 0.5843
+   "line_home": -3.1,
+   "p_home": 0.5908
   },
   {
    "espn": "401873050",
@@ -149,8 +140,8 @@
    "gameday": "2026-11-08",
    "away": "TB",
    "home": "CHI",
-   "line_home": -4.2,
-   "p_home": 0.6221
+   "line_home": -3.7,
+   "p_home": 0.6092
   },
   {
    "espn": "401873051",
@@ -158,8 +149,8 @@
    "gameday": "2026-11-09",
    "away": "BUF",
    "home": "MIN",
-   "line_home": -0.4,
-   "p_home": 0.5124
+   "line_home": 0.4,
+   "p_home": 0.4868
   },
   {
    "espn": "401873052",
@@ -167,8 +158,8 @@
    "gameday": "2026-11-12",
    "away": "WAS",
    "home": "NYG",
-   "line_home": -4.8,
-   "p_home": 0.6388
+   "line_home": -3.5,
+   "p_home": 0.6017
   }
  ],
  "ratings": {
@@ -193,11 +184,11 @@
   "ATL": 1479.3,
   "CLE": 1471.0,
   "DAL": 1462.1,
-  "PHI": 1454.6,
+  "WAS": 1460.7,
   "LV": 1447.3,
   "CAR": 1445.3,
-  "WAS": 1442.0,
   "NO": 1439.6,
+  "PHI": 1436.0,
   "IND": 1432.2,
   "ARI": 1417.2,
   "LAC": 1415.7,
