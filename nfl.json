@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-04T17:18:01Z",
+ "asof": "2026-11-04T23:42:31Z",
  "version": "nfl-1",
  "coef": [
   0.06,
@@ -14,8 +14,8 @@
    "gameday": "2026-11-05",
    "away": "JAX",
    "home": "BAL",
-   "line_home": 4.5,
-   "p_home": 0.3688
+   "line_home": 7.0,
+   "p_home": 0.303
   },
   {
    "espn": "401873038",
@@ -32,8 +32,8 @@
    "gameday": "2026-11-08",
    "away": "CLE",
    "home": "NO",
-   "line_home": -1.6,
-   "p_home": 0.5465
+   "line_home": -4.0,
+   "p_home": 0.617
   },
   {
    "espn": "401873040",
@@ -77,8 +77,8 @@
    "gameday": "2026-11-08",
    "away": "NYG",
    "home": "PHI",
-   "line_home": 2.5,
-   "p_home": 0.4255
+   "line_home": 5.0,
+   "p_home": 0.3563
   },
   {
    "espn": "401873045",
