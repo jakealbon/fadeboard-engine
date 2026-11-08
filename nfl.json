@@ -1,12 +1,12 @@
 {
- "asof": "2026-11-08T00:40:57Z",
+ "asof": "2026-11-08T10:29:03Z",
  "version": "nfl-1",
  "coef": [
-  0.053,
-  0.801,
-  13.719
+  -0.668,
+  1.159,
+  0.694
  ],
- "fit_mae": 10.14,
+ "fit_mae": 10.17,
  "games": [
   {
    "espn": "401873038",
@@ -14,8 +14,8 @@
    "gameday": "2026-11-08",
    "away": "CIN",
    "home": "ATL",
-   "line_home": 4.3,
-   "p_home": 0.375
+   "line_home": 4.4,
+   "p_home": 0.3709
   },
   {
    "espn": "401873039",
@@ -23,8 +23,8 @@
    "gameday": "2026-11-08",
    "away": "CLE",
    "home": "NO",
-   "line_home": -4.0,
-   "p_home": 0.6168
+   "line_home": -5.0,
+   "p_home": 0.6451
   },
   {
    "espn": "401873040",
@@ -32,8 +32,8 @@
    "gameday": "2026-11-08",
    "away": "DAL",
    "home": "IND",
-   "line_home": 0.2,
-   "p_home": 0.4955
+   "line_home": -0.1,
+   "p_home": 0.5039
   },
   {
    "espn": "401873041",
@@ -41,8 +41,8 @@
    "gameday": "2026-11-08",
    "away": "DEN",
    "home": "CAR",
-   "line_home": 4.2,
-   "p_home": 0.3772
+   "line_home": 4.8,
+   "p_home": 0.3624
   },
   {
    "espn": "401873042",
@@ -50,8 +50,8 @@
    "gameday": "2026-11-08",
    "away": "DET",
    "home": "MIA",
-   "line_home": 6.1,
-   "p_home": 0.3262
+   "line_home": 5.8,
+   "p_home": 0.3328
   },
   {
    "espn": "401873043",
@@ -59,8 +59,8 @@
    "gameday": "2026-11-08",
    "away": "LA",
    "home": "WAS",
-   "line_home": 5.0,
-   "p_home": 0.3563
+   "line_home": 3.9,
+   "p_home": 0.3875
   },
   {
    "espn": "401873044",
@@ -68,8 +68,8 @@
    "gameday": "2026-11-08",
    "away": "NYG",
    "home": "PHI",
-   "line_home": 5.0,
-   "p_home": 0.3559
+   "line_home": 5.6,
+   "p_home": 0.3392
   },
   {
    "espn": "401873045",
@@ -77,8 +77,8 @@
    "gameday": "2026-11-08",
    "away": "NYJ",
    "home": "KC",
-   "line_home": -9.1,
-   "p_home": 0.7496
+   "line_home": -9.3,
+   "p_home": 0.7542
   },
   {
    "espn": "401873046",
@@ -86,8 +86,8 @@
    "gameday": "2026-11-08",
    "away": "HOU",
    "home": "LAC",
-   "line_home": 4.4,
-   "p_home": 0.3727
+   "line_home": 4.0,
+   "p_home": 0.3825
   },
   {
    "espn": "401873047",
@@ -95,8 +95,8 @@
    "gameday": "2026-11-08",
    "away": "LV",
    "home": "SF",
-   "line_home": -11.5,
-   "p_home": 0.8029
+   "line_home": -10.8,
+   "p_home": 0.789
   },
   {
    "espn": "401873048",
@@ -104,8 +104,8 @@
    "gameday": "2026-11-08",
    "away": "ARI",
    "home": "SEA",
-   "line_home": -13.0,
-   "p_home": 0.833
+   "line_home": -14.5,
+   "p_home": 0.8589
   },
   {
    "espn": "401873049",
@@ -113,8 +113,8 @@
    "gameday": "2026-11-08",
    "away": "GB",
    "home": "NE",
-   "line_home": -3.1,
-   "p_home": 0.5904
+   "line_home": -3.4,
+   "p_home": 0.599
   },
   {
    "espn": "401873050",
@@ -122,8 +122,8 @@
    "gameday": "2026-11-08",
    "away": "TB",
    "home": "CHI",
-   "line_home": -5.3,
-   "p_home": 0.6523
+   "line_home": -6.8,
+   "p_home": 0.6917
   },
   {
    "espn": "401873051",
@@ -131,8 +131,8 @@
    "gameday": "2026-11-09",
    "away": "BUF",
    "home": "MIN",
-   "line_home": 0.5,
-   "p_home": 0.4863
+   "line_home": -0.4,
+   "p_home": 0.5108
   },
   {
    "espn": "401873052",
@@ -140,8 +140,8 @@
    "gameday": "2026-11-12",
    "away": "WAS",
    "home": "NYG",
-   "line_home": -3.5,
-   "p_home": 0.6013
+   "line_home": -3.2,
+   "p_home": 0.5937
   },
   {
    "espn": "401873053",
@@ -149,8 +149,8 @@
    "gameday": "2026-11-15",
    "away": "NE",
    "home": "DET",
-   "line_home": 1.5,
-   "p_home": 0.4566
+   "line_home": 1.6,
+   "p_home": 0.4517
   },
   {
    "espn": "401873054",
@@ -158,8 +158,8 @@
    "gameday": "2026-11-15",
    "away": "BUF",
    "home": "NYJ",
-   "line_home": 9.5,
-   "p_home": 0.2413
+   "line_home": 9.9,
+   "p_home": 0.2314
   },
   {
    "espn": "401873055",
@@ -167,8 +167,8 @@
    "gameday": "2026-11-15",
    "away": "CAR",
    "home": "NO",
-   "line_home": -1.7,
-   "p_home": 0.5495
+   "line_home": -1.6,
+   "p_home": 0.5481
   },
   {
    "espn": "401873056",
@@ -176,8 +176,8 @@
    "gameday": "2026-11-15",
    "away": "HOU",
    "home": "CLE",
-   "line_home": 1.0,
-   "p_home": 0.4695
+   "line_home": -0.1,
+   "p_home": 0.5022
   },
   {
    "espn": "401873057",
@@ -185,8 +185,8 @@
    "gameday": "2026-11-15",
    "away": "JAX",
    "home": "TEN",
-   "line_home": 12.8,
-   "p_home": 0.1711
+   "line_home": 11.2,
+   "p_home": 0.2034
   },
   {
    "espn": "401873058",
@@ -194,8 +194,8 @@
    "gameday": "2026-11-15",
    "away": "KC",
    "home": "ATL",
-   "line_home": 2.5,
-   "p_home": 0.4254
+   "line_home": 1.6,
+   "p_home": 0.4523
   },
   {
    "espn": "401873059",
@@ -203,8 +203,8 @@
    "gameday": "2026-11-15",
    "away": "MIA",
    "home": "IND",
-   "line_home": -3.1,
-   "p_home": 0.5919
+   "line_home": -2.9,
+   "p_home": 0.5855
   },
   {
    "espn": "401873060",
@@ -212,8 +212,8 @@
    "gameday": "2026-11-15",
    "away": "MIN",
    "home": "GB",
-   "line_home": 0.8,
-   "p_home": 0.4768
+   "line_home": 2.2,
+   "p_home": 0.4347
   },
   {
    "espn": "401873061",
@@ -221,8 +221,8 @@
    "gameday": "2026-11-15",
    "away": "LA",
    "home": "ARI",
-   "line_home": 9.6,
-   "p_home": 0.2377
+   "line_home": 9.5,
+   "p_home": 0.2404
   },
   {
    "espn": "401873062",
@@ -230,8 +230,8 @@
    "gameday": "2026-11-15",
    "away": "SEA",
    "home": "LV",
-   "line_home": 6.2,
-   "p_home": 0.3239
+   "line_home": 5.9,
+   "p_home": 0.3317
   },
   {
    "espn": "401873063",
@@ -239,8 +239,8 @@
    "gameday": "2026-11-15",
    "away": "SF",
    "home": "DAL",
-   "line_home": 5.7,
-   "p_home": 0.3376
+   "line_home": 5.2,
+   "p_home": 0.3493
   },
   {
    "espn": "401873064",
@@ -248,8 +248,8 @@
    "gameday": "2026-11-15",
    "away": "PIT",
    "home": "CIN",
-   "line_home": -1.1,
-   "p_home": 0.5317
+   "line_home": 0.0,
+   "p_home": 0.4988
   },
   {
    "espn": "401873065",
@@ -257,8 +257,8 @@
    "gameday": "2026-11-16",
    "away": "LAC",
    "home": "BAL",
-   "line_home": -5.7,
-   "p_home": 0.6625
+   "line_home": -6.9,
+   "p_home": 0.6944
   }
  ],
  "ratings": {
