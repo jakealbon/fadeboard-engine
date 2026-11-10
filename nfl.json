@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-10T14:56:27Z",
+ "asof": "2026-11-10T21:19:16Z",
  "version": "nfl-1",
  "coef": [
   0.021,
@@ -86,8 +86,8 @@
    "gameday": "2026-11-15",
    "away": "MIN",
    "home": "GB",
-   "line_home": -2.6,
-   "p_home": 0.5751
+   "line_home": -5.0,
+   "p_home": 0.6446
   },
   {
    "espn": "401873061",
@@ -104,8 +104,8 @@
    "gameday": "2026-11-15",
    "away": "SEA",
    "home": "LV",
-   "line_home": 7.3,
-   "p_home": 0.2941
+   "line_home": 9.8,
+   "p_home": 0.2349
   },
   {
    "espn": "401873063",
