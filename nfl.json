@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-12T19:57:43Z",
+ "asof": "2026-11-13T01:51:26Z",
  "version": "nfl-1",
  "coef": [
   0.021,
@@ -241,6 +241,15 @@
    "home": "SF",
    "line_home": -6.0,
    "p_home": 0.6713
+  },
+  {
+   "espn": "401873078",
+   "game_id": "2026_11_CIN_WAS",
+   "gameday": "2026-11-23",
+   "away": "CIN",
+   "home": "WAS",
+   "line_home": 3.9,
+   "p_home": 0.3859
   }
  ],
  "ratings": {
