@@ -1,25 +1,13 @@
 {
- "asof": "2026-11-15T16:24:35Z",
+ "asof": "2026-11-15T22:52:19Z",
  "version": "nba-1",
  "coef": [
   -0.534,
   1.381,
   -0.251
  ],
- "sd": 13.92,
+ "sd": 13.91,
  "games": [
-  {
-   "espn": "401909985",
-   "date": "2026-11-15T18:00Z",
-   "away": "IND",
-   "home": "PHI",
-   "line_home": -9.2,
-   "p_home": 0.7451,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
   {
    "espn": "401909986",
    "date": "2026-11-15T21:00Z",
@@ -122,7 +110,7 @@
    "away": "ORL",
    "home": "BOS",
    "line_home": -8.9,
-   "p_home": 0.7379,
+   "p_home": 0.738,
    "missing": [
     0.0,
     0.0
@@ -157,8 +145,8 @@
    "date": "2026-11-17T00:30Z",
    "away": "PHI",
    "home": "BKN",
-   "line_home": 6.6,
-   "p_home": 0.3179,
+   "line_home": 4.3,
+   "p_home": 0.3796,
    "missing": [
     0.0,
     0.0
@@ -254,7 +242,7 @@
    "away": "UTAH",
    "home": "LAC",
    "line_home": -9.2,
-   "p_home": 0.7455,
+   "p_home": 0.7456,
    "missing": [
     0.0,
     0.0
