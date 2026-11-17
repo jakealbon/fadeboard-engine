@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-16T19:38:43Z",
+ "asof": "2026-11-17T03:55:49Z",
  "version": "nfl-1",
  "coef": [
   0.01,
@@ -169,6 +169,15 @@
    "home": "BUF",
    "line_home": -5.5,
    "p_home": 0.657
+  },
+  {
+   "espn": "401873083",
+   "game_id": "2026_12_DEN_PIT",
+   "gameday": "2026-11-27",
+   "away": "DEN",
+   "home": "PIT",
+   "line_home": 1.2,
+   "p_home": 0.465
   }
  ],
  "ratings": {
