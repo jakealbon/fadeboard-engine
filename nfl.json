@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-19T20:40:55Z",
+ "asof": "2026-11-20T02:21:25Z",
  "version": "nfl-1",
  "coef": [
   0.004,
@@ -259,6 +259,15 @@
    "home": "CLE",
    "line_home": -5.5,
    "p_home": 0.6578
+  },
+  {
+   "espn": "401873094",
+   "game_id": "2026_12_CAR_TB",
+   "gameday": "2026-11-30",
+   "away": "CAR",
+   "home": "TB",
+   "line_home": -4.4,
+   "p_home": 0.6271
   }
  ],
  "ratings": {
