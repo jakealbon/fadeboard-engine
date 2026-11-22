@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-21T19:19:56Z",
+ "asof": "2026-11-22T01:23:14Z",
  "version": "nba-1",
  "coef": [
   -0.555,
@@ -9,24 +9,12 @@
  "sd": 13.91,
  "games": [
   {
-   "espn": "401910023",
-   "date": "2026-11-21T18:00Z",
-   "away": "MIL",
-   "home": "PHI",
-   "line_home": -12.6,
-   "p_home": 0.8173,
-   "missing": [
-    0.0,
-    0.0
-   ]
-  },
-  {
    "espn": "401910024",
    "date": "2026-11-22T00:30Z",
    "away": "POR",
    "home": "NY",
-   "line_home": -6.1,
-   "p_home": 0.6682,
+   "line_home": -6.0,
+   "p_home": 0.6681,
    "missing": [
     0.0,
     0.0
@@ -62,7 +50,7 @@
    "away": "NO",
    "home": "SA",
    "line_home": -18.3,
-   "p_home": 0.9054,
+   "p_home": 0.9053,
    "missing": [
     0.0,
     0.0
@@ -134,7 +122,7 @@
    "away": "DAL",
    "home": "UTAH",
    "line_home": 2.4,
-   "p_home": 0.4317,
+   "p_home": 0.4316,
    "missing": [
     0.0,
     0.0
@@ -146,7 +134,7 @@
    "away": "IND",
    "home": "NY",
    "line_home": -14.6,
-   "p_home": 0.8528,
+   "p_home": 0.8527,
    "missing": [
     0.0,
     0.0
@@ -181,8 +169,8 @@
    "date": "2026-11-24T00:00Z",
    "away": "POR",
    "home": "PHI",
-   "line_home": -1.9,
-   "p_home": 0.5549,
+   "line_home": -2.0,
+   "p_home": 0.5567,
    "missing": [
     0.0,
     0.0
@@ -206,7 +194,7 @@
    "away": "MIL",
    "home": "TOR",
    "line_home": -9.6,
-   "p_home": 0.7545,
+   "p_home": 0.7559,
    "missing": [
     0.0,
     0.0
@@ -218,7 +206,7 @@
    "away": "BKN",
    "home": "MIN",
    "line_home": -14.0,
-   "p_home": 0.8437,
+   "p_home": 0.8436,
    "missing": [
     0.0,
     0.0
@@ -229,7 +217,7 @@
    "date": "2026-11-24T01:00Z",
    "away": "CLE",
    "home": "CHI",
-   "line_home": 5.0,
+   "line_home": 4.9,
    "p_home": 0.361,
    "missing": [
     0.0,
@@ -279,6 +267,30 @@
    "home": "SAC",
    "line_home": 14.8,
    "p_home": 0.1443,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909314",
+   "date": "2026-11-25T00:00Z",
+   "away": "DET",
+   "home": "ORL",
+   "line_home": 3.1,
+   "p_home": 0.4107,
+   "missing": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "espn": "401909315",
+   "date": "2026-11-25T01:00Z",
+   "away": "BOS",
+   "home": "WSH",
+   "line_home": 11.3,
+   "p_home": 0.2089,
    "missing": [
     0.0,
     0.0
