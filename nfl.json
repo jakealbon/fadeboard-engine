@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-22T11:29:52Z",
+ "asof": "2026-11-22T19:44:22Z",
  "version": "nfl-1",
  "coef": [
   0.012,
@@ -27,15 +27,6 @@
    "p_home": 0.5304
   },
   {
-   "espn": "401873069",
-   "game_id": "2026_11_JAX_NYG",
-   "gameday": "2026-11-22",
-   "away": "JAX",
-   "home": "NYG",
-   "line_home": 4.8,
-   "p_home": 0.3601
-  },
-  {
    "espn": "401873070",
    "game_id": "2026_11_MIA_BUF",
    "gameday": "2026-11-22",
@@ -52,6 +43,15 @@
    "home": "CHI",
    "line_home": -10.1,
    "p_home": 0.7726
+  },
+  {
+   "espn": "401873076",
+   "game_id": "2026_11_PIT_PHI",
+   "gameday": "2026-11-22",
+   "away": "PIT",
+   "home": "PHI",
+   "line_home": 2.7,
+   "p_home": 0.4196
   },
   {
    "espn": "401873072",
@@ -81,6 +81,15 @@
    "p_home": 0.6005
   },
   {
+   "espn": "401873069",
+   "game_id": "2026_11_JAX_NYG",
+   "gameday": "2026-11-22",
+   "away": "JAX",
+   "home": "NYG",
+   "line_home": 4.8,
+   "p_home": 0.3601
+  },
+  {
    "espn": "401873075",
    "game_id": "2026_11_LV_DEN",
    "gameday": "2026-11-22",
@@ -88,15 +97,6 @@
    "home": "DEN",
    "line_home": -11.0,
    "p_home": 0.7931
-  },
-  {
-   "espn": "401873076",
-   "game_id": "2026_11_PIT_PHI",
-   "gameday": "2026-11-22",
-   "away": "PIT",
-   "home": "PHI",
-   "line_home": 2.7,
-   "p_home": 0.4196
   },
   {
    "espn": "401873077",
