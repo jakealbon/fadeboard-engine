@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-25T19:19:57Z",
+ "asof": "2026-11-26T03:36:19Z",
  "version": "nfl-1",
  "coef": [
   0.08,
@@ -160,6 +160,114 @@
    "home": "LA",
    "line_home": -2.8,
    "p_home": 0.5812
+  },
+  {
+   "espn": "401873097",
+   "game_id": "2026_13_CIN_CLE",
+   "gameday": "2026-12-06",
+   "away": "CIN",
+   "home": "CLE",
+   "line_home": 4.3,
+   "p_home": 0.3745
+  },
+  {
+   "espn": "401873098",
+   "game_id": "2026_13_DET_ATL",
+   "gameday": "2026-12-06",
+   "away": "DET",
+   "home": "ATL",
+   "line_home": 8.4,
+   "p_home": 0.2657
+  },
+  {
+   "espn": "401873099",
+   "game_id": "2026_13_GB_NO",
+   "gameday": "2026-12-06",
+   "away": "GB",
+   "home": "NO",
+   "line_home": 3.9,
+   "p_home": 0.3862
+  },
+  {
+   "espn": "401873100",
+   "game_id": "2026_13_JAX_CHI",
+   "gameday": "2026-12-06",
+   "away": "JAX",
+   "home": "CHI",
+   "line_home": -0.2,
+   "p_home": 0.5073
+  },
+  {
+   "espn": "401873101",
+   "game_id": "2026_13_LAC_TB",
+   "gameday": "2026-12-06",
+   "away": "LAC",
+   "home": "TB",
+   "line_home": -6.9,
+   "p_home": 0.6944
+  },
+  {
+   "espn": "401873095",
+   "game_id": "2026_13_SF_NYG",
+   "gameday": "2026-12-06",
+   "away": "SF",
+   "home": "NYG",
+   "line_home": 6.2,
+   "p_home": 0.3237
+  },
+  {
+   "espn": "401873102",
+   "game_id": "2026_13_WAS_TEN",
+   "gameday": "2026-12-06",
+   "away": "WAS",
+   "home": "TEN",
+   "line_home": 5.3,
+   "p_home": 0.3475
+  },
+  {
+   "espn": "401873103",
+   "game_id": "2026_13_MIA_DEN",
+   "gameday": "2026-12-06",
+   "away": "MIA",
+   "home": "DEN",
+   "line_home": -12.2,
+   "p_home": 0.8169
+  },
+  {
+   "espn": "401873104",
+   "game_id": "2026_13_PHI_ARI",
+   "gameday": "2026-12-06",
+   "away": "PHI",
+   "home": "ARI",
+   "line_home": 2.5,
+   "p_home": 0.4254
+  },
+  {
+   "espn": "401873105",
+   "game_id": "2026_13_BUF_NE",
+   "gameday": "2026-12-06",
+   "away": "BUF",
+   "home": "NE",
+   "line_home": 7.5,
+   "p_home": 0.2887
+  },
+  {
+   "espn": "401873106",
+   "game_id": "2026_13_CAR_MIN",
+   "gameday": "2026-12-06",
+   "away": "CAR",
+   "home": "MIN",
+   "line_home": -6.2,
+   "p_home": 0.6781
+  },
+  {
+   "espn": "401873107",
+   "game_id": "2026_13_HOU_PIT",
+   "gameday": "2026-12-06",
+   "away": "HOU",
+   "home": "PIT",
+   "line_home": 2.3,
+   "p_home": 0.431
   }
  ],
  "ratings": {
