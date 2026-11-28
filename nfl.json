@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-28T07:53:51Z",
+ "asof": "2026-11-28T17:35:38Z",
  "version": "nfl-1",
  "coef": [
   0.106,
@@ -185,8 +185,8 @@
    "gameday": "2026-12-06",
    "away": "MIA",
    "home": "DEN",
-   "line_home": -11.0,
-   "p_home": 0.7925
+   "line_home": -10.6,
+   "p_home": 0.7847
   },
   {
    "espn": "401873104",
@@ -221,8 +221,8 @@
    "gameday": "2026-12-06",
    "away": "HOU",
    "home": "PIT",
-   "line_home": -1.2,
-   "p_home": 0.534
+   "line_home": -1.5,
+   "p_home": 0.5441
   },
   {
    "espn": "401873108",
